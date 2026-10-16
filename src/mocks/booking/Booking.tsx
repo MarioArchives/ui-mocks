@@ -1,4 +1,5 @@
-// Booking desk (Mystery Pub Crawl): what a new player sees after signing in with Google. First the interview room (a
+// Booking desk (Mystery Pub Crawl): what a new player sees, from the game's sign-in screen and Google's account picker
+// (a stand-in: nothing is signed in) to waiting on the GM. After sign-in, first the interview room (a
 // desk in the dark, a man behind it, and a lamp that swings round into their face: "Who are you?"), then three steps
 // on one screen: their particulars on a manila booking sheet, a typed letter from the police thanking them and warning that their
 // prints come next, their right thumb on a livescan machine (press and hold; nothing is read, it only looks the part),
@@ -7,8 +8,10 @@ import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type R
 import '../../themes/mystery.css';
 import './booking.css';
 import { FINGER, PRINT_H, PRINT_W, hashText, makePrint, type Print } from './fingerprint';
+import { GoogleMark } from './google';
+import { SignIn } from './SignIn';
 
-type Step = 'room' | 'particulars' | 'letter' | 'prints' | 'booked';
+type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked';
 
 interface Particulars {
   name: string;
@@ -20,6 +23,7 @@ interface Particulars {
 
 /** Who the mock pretends signed in with Google. */
 const GOOGLE_NAME = 'Sam Rivers';
+const GOOGLE_EMAIL = 'sam.rivers@example.com';
 const POISONS = ['Pint', 'Wine', 'Gin', 'Cocktail', 'Shots', 'Soft'];
 /** The step tabs; the letter counts as the start of the prints. */
 const STEPS: { id: Step; label: string }[] = [
@@ -50,7 +54,7 @@ const buzz = (pattern: number | number[]) => {
 };
 
 export default function Booking() {
-  const [step, setStep] = useState<Step>('room');
+  const [step, setStep] = useState<Step>('signin');
   const [who, setWho] = useState<Particulars>({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
   const print = useMemo(() => makePrint(`${who.name}|${who.alias}`), [who.name, who.alias]);
 
@@ -60,8 +64,10 @@ export default function Booking() {
 
   const startOver = () => {
     setWho({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
-    setStep('room');
+    setStep('signin');
   };
+
+  if (step === 'signin') return <SignIn name={GOOGLE_NAME} email={GOOGLE_EMAIL} onDone={() => setStep('room')} />;
 
   if (step === 'room') {
     return (
@@ -106,12 +112,7 @@ export default function Booking() {
 function GoogleG() {
   return (
     <span className="bk-who__g" aria-hidden="true">
-      <svg width="14" height="14" viewBox="0 0 24 24">
-        <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z" />
-        <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z" />
-        <path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z" />
-        <path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z" />
-      </svg>
+      <GoogleMark size={14} />
     </span>
   );
 }

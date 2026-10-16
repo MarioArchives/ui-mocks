@@ -18,7 +18,7 @@ export const MOCKS: Mock[] = [
   {
     id: 'booking',
     title: 'Booking desk',
-    blurb: 'After Google sign-in: fill in your particulars, then press and hold to have your prints taken.',
+    blurb: 'From the sign-in screen: Google, the interview room, your particulars, a letter from the police, your prints, then booked.',
     game: 'Mystery Pub Crawl',
     backdrop: '#0d0e0f',
     load: () => import('./booking/Booking'),

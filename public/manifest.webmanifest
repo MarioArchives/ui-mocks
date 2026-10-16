@@ -1,0 +1,12 @@
+{
+  "name": "Quest Mocks",
+  "short_name": "Mocks",
+  "description": "Phone-first UI mocks for Quest-Game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0e0f",
+  "theme_color": "#0d0e0f",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,0 +1,370 @@
+/*
+ * Booking desk, in the mystery pack's look: the dark room and torch of the sign-in screen, a felt letterboard over
+ * the desk, manila folders for the paperwork, and a livescan machine with a glowing teal screen for the prints.
+ */
+.bk {
+  --scan: #5fe0d6;
+  --scan-dim: rgba(95, 224, 214, 0.35);
+  --scan-faint: rgba(95, 224, 214, 0.12);
+  --pending: #e3b25a;
+  --print-ink: #1d1b22;
+  position: relative; isolation: isolate; overflow-x: clip;
+  max-width: 480px; min-height: 100dvh; margin: 0 auto; padding: 0 0 calc(40px + var(--safe-bottom));
+  background: var(--room); color: var(--room-text); font-family: var(--body);
+}
+.bk__beam {
+  position: absolute; z-index: -1; left: -25%; right: -25%; top: 40px; height: 620px; pointer-events: none;
+  background: radial-gradient(50% 46% at 50% 45%, rgba(233, 226, 200, 0.2) 0%, rgba(233, 226, 200, 0.09) 40%, rgba(233, 226, 200, 0.02) 64%, transparent 76%);
+  animation: bk-torch 9s ease-in-out infinite alternate;
+}
+@keyframes bk-torch {
+  from { transform: translate(-12px, 0) rotate(-1.5deg); }
+  to { transform: translate(12px, 12px) rotate(1.5deg); }
+}
+
+/* ---------- the desk: letterboard, who you are, the steps ---------- */
+.bk-board {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin: calc(var(--safe-top) + 34px) 16px 0; padding: 10px 12px 11px;
+  background-color: var(--felt);
+  background-image: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 5px);
+  border: 5px solid #2b2620; border-radius: 4px; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.55), inset 0 0 12px rgba(0, 0, 0, 0.6);
+}
+.bk-board__line { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--felt-sub); }
+.bk-board__title { font-family: var(--mono); font-size: 19px; font-weight: 700; letter-spacing: 5px; text-transform: uppercase; color: var(--felt-text); }
+
+.bk-who {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 8px; margin: 14px 16px 0;
+  font-size: 13px; color: var(--room-sub);
+}
+.bk-who strong { color: var(--room-text); font-weight: 600; }
+.bk-who__g { display: inline-flex; padding: 3px; border-radius: 50%; background: #fff; }
+.bk-who__out { padding: 4px 2px; border: 0; background: none; color: var(--room-faint); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.bk-steps { display: flex; justify-content: center; gap: 6px; margin: 16px 12px 0; padding: 0; list-style: none; }
+.bk-steps__tab {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 4px; border: 1.5px solid currentColor; border-radius: 999px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--room-faint);
+  white-space: nowrap;
+}
+.bk-steps__n { font-size: 10px; }
+.bk-steps__tab.is-done { color: var(--scan); }
+.bk-steps__tab.is-now { background: var(--manila); border-color: var(--manila); color: var(--manila-ink); }
+
+.bk-step { animation: bk-in 0.32s ease-out both; }
+@keyframes bk-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- paperwork: a manila folder with a clipped tab ---------- */
+.bk-folder { display: flex; flex-direction: column; align-items: flex-start; margin: 26px 12px 0; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.55)); }
+.bk-folder__tab {
+  position: relative; margin-left: 16px; padding: 6px 38px 4px 14px; border-radius: 7px 7px 0 0; background: var(--manila-tab);
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--manila-ink);
+}
+.bk-clip--tab { position: absolute; right: 10px; top: -18px; }
+.bk-folder__body {
+  position: relative; align-self: stretch; display: flex; flex-direction: column; gap: 18px; padding: 20px 16px 22px;
+  border-radius: 0 4px 4px 4px; background: var(--manila); background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.05));
+  color: var(--manila-ink);
+}
+.bk-title { font-family: var(--display); font-size: 27px; line-height: 1.05; }
+.bk-note { margin-top: -10px; font-size: 14px; line-height: 1.45; color: var(--manila-sub); }
+
+.bk-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.bk-label {
+  display: flex; align-items: center; gap: 8px; padding: 0;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--manila-sub);
+}
+/* 16px type, so iPhones don't zoom in on focus. */
+.bk-input {
+  width: 100%; margin: 0; padding: 9px 8px 7px; border: 0; border-bottom: 2px solid var(--manila-ink); border-radius: 0;
+  background: rgba(255, 255, 255, 0.3); color: var(--manila-ink); font-family: var(--mono); font-size: 16px; line-height: 1.3;
+  outline: none; -webkit-appearance: none; appearance: none;
+}
+.bk-input::placeholder { color: rgba(42, 33, 22, 0.42); }
+.bk-input:focus { background: rgba(255, 255, 255, 0.55); border-bottom-color: var(--accent); box-shadow: 0 2px 0 var(--accent); }
+.bk-input--area { min-height: 66px; resize: none; }
+.bk-hint { font-family: var(--mono); font-size: 11px; color: var(--manila-sub); }
+.bk-field.is-missing .bk-input { border-bottom-color: var(--warn); background: rgba(163, 52, 42, 0.09); }
+
+/* Height: a ruler with a marker you slide; the ticks line up with the marker's travel. */
+.bk-ruler { --thumb: 24px; position: relative; height: 50px; }
+.bk-ruler::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 32px; border-bottom: 2px solid var(--manila-ink);
+  background: var(--chart-paper);
+}
+.bk-ruler__ticks {
+  position: absolute; left: calc(var(--thumb) / 2); right: calc(var(--thumb) / 2); top: 0; height: 50px; pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--manila-ink) 1.5px, transparent 1.5px) 0 18px / calc(100% / 7 - 0.01px) 14px repeat-x,
+    linear-gradient(90deg, var(--manila-sub) 1px, transparent 1px) 0 24px / calc(100% / 14 - 0.01px) 8px repeat-x;
+}
+.bk-ruler__ticks span {
+  position: absolute; top: 36px; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700; color: var(--manila-sub);
+}
+.bk-ruler__ticks span:nth-child(1) { left: 0; }
+.bk-ruler__ticks span:nth-child(2) { left: calc(100% / 7); }
+.bk-ruler__ticks span:nth-child(3) { left: calc(200% / 7); }
+.bk-ruler__ticks span:nth-child(4) { left: calc(300% / 7); }
+.bk-ruler__ticks span:nth-child(5) { left: calc(400% / 7); }
+.bk-ruler__ticks span:nth-child(6) { left: calc(500% / 7); }
+.bk-ruler__ticks span:nth-child(7) { left: calc(600% / 7); }
+.bk-ruler__ticks span:nth-child(8) { left: 100%; }
+.bk-range {
+  position: relative; z-index: 1; display: block; width: 100%; height: 32px; margin: 0; background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none; touch-action: pan-y;
+}
+.bk-range:focus { outline: none; }
+.bk-range::-webkit-slider-runnable-track { height: 32px; background: transparent; }
+.bk-range::-moz-range-track { height: 32px; background: transparent; }
+.bk-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: var(--thumb, 24px); height: 32px; border-radius: 3px 3px 0 0;
+  background: var(--warn); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.bk-range::-moz-range-thumb {
+  width: 24px; height: 32px; border: 0; border-radius: 3px 3px 0 0; background: var(--warn);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+.bk-range:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.bk-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bk-chip {
+  min-height: 42px; padding: 0 14px; border: 2px solid var(--manila-ink); border-radius: 3px; background: transparent; cursor: pointer;
+  font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--manila-ink);
+  transition: transform 0.12s ease-out;
+}
+.bk-chip[aria-checked='true'] { background: var(--manila-ink); color: var(--manila); transform: rotate(-2deg); }
+
+/* The big go button: teal paper on the folder, or on the machine. */
+.bk-go {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; margin-top: 4px; padding: 0 16px;
+  border: 0; border-radius: 4px; background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 0 var(--teal-deep);
+  font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+}
+.bk-go:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--teal-deep); }
+.bk-go:focus-visible { outline: 3px solid var(--room-text); outline-offset: 3px; }
+.bk-go--dark { margin-top: 2px; }
+
+.bk-stamp {
+  display: inline-block; padding: 1px 6px; border: 2px solid currentColor; transform: rotate(-3deg);
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; line-height: 1.3;
+}
+.bk-stamp--red { color: var(--stamp-bad); }
+.bk-stamp--teal { color: var(--stamp-plain); }
+.bk-stamp--tiny { padding: 0 4px; border-width: 1.5px; font-size: 9px; animation: bk-stamp-in 0.3s ease-out both; }
+@keyframes bk-stamp-in {
+  from { opacity: 0; transform: scale(1.8) rotate(-12deg); }
+  to { opacity: 1; transform: rotate(-3deg); }
+}
+
+/* ---------- the livescan machine ---------- */
+.bk-scan {
+  position: relative; display: flex; flex-direction: column; gap: 12px; margin: 22px 12px 0; padding: 14px 14px 16px;
+  border-radius: 20px; background: linear-gradient(180deg, #2c2f31, #1b1d1f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 0 rgba(0, 0, 0, 0.55);
+}
+/* Two screws at the top corners. */
+.bk-scan::before, .bk-scan::after {
+  content: ''; position: absolute; top: 12px; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #8b9194, #4a4f52 70%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.bk-scan::before { left: 12px; }
+.bk-scan::after { right: 12px; }
+.bk-scan__plate {
+  display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 20px;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #8f9598;
+}
+.bk-scan__led { width: 8px; height: 8px; border-radius: 50%; background: #3b3f41; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5); }
+.bk-scan__led.is-on { background: #ff5e4d; box-shadow: 0 0 8px #ff5e4d; animation: bk-blink 0.5s steps(2) infinite; }
+.bk-scan__led.is-done { background: var(--scan); box-shadow: 0 0 8px var(--scan); }
+@keyframes bk-blink { 50% { opacity: 0.35; } }
+
+.bk-screen {
+  position: relative; height: clamp(180px, 50vw, 260px); overflow: hidden; border-radius: 10px; border: 2px solid #0a0e0f;
+  background: radial-gradient(circle at 50% 42%, #0f2c2a 0%, #071211 62%, #040909 100%);
+  box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.85), inset 0 0 0 1px var(--scan-faint);
+}
+.bk-screen::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px);
+}
+.bk-screen__grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(95, 224, 214, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(95, 224, 214, 0.06) 1px, transparent 1px);
+  background-size: 16px 16px; background-position: center;
+}
+.bk-screen__corner { position: absolute; width: 14px; height: 14px; border: 2px solid var(--scan-dim); }
+.bk-screen__corner--tl { left: 8px; top: 8px; border-right: 0; border-bottom: 0; }
+.bk-screen__corner--tr { right: 8px; top: 8px; border-left: 0; border-bottom: 0; }
+.bk-screen__corner--bl { left: 8px; bottom: 8px; border-right: 0; border-top: 0; }
+.bk-screen__corner--br { right: 8px; bottom: 8px; border-left: 0; border-top: 0; }
+.bk-screen__hud {
+  position: absolute; z-index: 1; left: 28px; right: 28px; top: 10px; display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--scan);
+  text-shadow: 0 0 6px rgba(95, 224, 214, 0.6);
+}
+.bk-screen__print {
+  position: absolute; left: 50%; top: 53%; height: 80%; transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 3px rgba(95, 224, 214, 0.55)); transition: top 0.35s ease-out, height 0.35s ease-out;
+}
+.is-searching .bk-screen__print { top: 40%; height: 62%; animation: bk-flicker 0.4s steps(3) infinite; }
+.is-done .bk-screen__print { filter: drop-shadow(0 0 5px rgba(95, 224, 214, 0.75)); }
+@keyframes bk-flicker { 50% { opacity: 0.55; } }
+.bk-screen__stamp {
+  position: absolute; z-index: 1; right: 16px; bottom: 16px; padding: 2px 8px; border-width: 2.5px;
+  background: rgba(3, 8, 8, 0.88); color: var(--scan); font-size: 12px; text-shadow: 0 0 6px rgba(95, 224, 214, 0.6);
+  box-shadow: 0 0 10px rgba(95, 224, 214, 0.25);
+  animation: bk-slam-small 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+@keyframes bk-slam-small {
+  from { opacity: 0; transform: scale(2) rotate(-14deg); }
+  to { opacity: 1; transform: rotate(-7deg); }
+}
+.bk-records {
+  position: absolute; z-index: 1; left: 12px; right: 12px; bottom: 12px; display: flex; flex-direction: column; padding: 6px 8px;
+  border-radius: 4px; background: rgba(3, 8, 8, 0.82); box-shadow: inset 0 0 0 1px var(--scan-faint);
+  font-family: var(--mono); font-size: 9.5px; line-height: 1.4; white-space: pre; color: rgba(95, 224, 214, 0.8);
+  text-shadow: 0 0 5px rgba(95, 224, 214, 0.5);
+}
+
+.bk-print { display: block; overflow: visible; }
+.bk-print__ghost { fill: rgba(95, 224, 214, 0.04); stroke: rgba(95, 224, 214, 0.3); stroke-width: 1.2; stroke-dasharray: 4 5; }
+.bk-print__ridges path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bk-print--glow .bk-print__ridges path { stroke: var(--scan); stroke-width: 2.9; }
+.bk-print__scan { fill: #c6fffa; }
+.bk-print--ink .bk-print__ridges path { stroke: var(--print-ink); stroke-width: 3.3; }
+
+.bk-readout { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.bk-readout div { padding: 6px 2px 5px; border-radius: 6px; background: #121415; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04); text-align: center; }
+.bk-readout dt { font-family: var(--mono); font-size: 8.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #7a8184; }
+.bk-readout dd { margin: 2px 0 0; font-family: var(--mono); font-size: 15px; font-weight: 700; text-transform: uppercase; color: #d6f5f2; font-variant-numeric: tabular-nums; }
+
+.bk-status { min-height: 1.5em; font-family: var(--mono); font-size: 13px; text-align: center; color: #c5ccce; }
+.bk-status.is-warn { color: var(--warn-on-dark); }
+.bk-status.is-good { color: var(--scan); }
+
+/* The glass you press: thumb-sized, with the reading running round its edge. */
+.bk-pad {
+  --p: 0;
+  position: relative; display: grid; place-items: center; align-self: center; width: min(184px, 52vw); aspect-ratio: 5 / 6;
+  margin-top: 2px; padding: 0; overflow: hidden; border: 0; border-radius: 30px; cursor: pointer; color: var(--scan);
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at 50% 45%, #18302e 0%, #0b1415 72%);
+  box-shadow: inset 0 0 0 1px rgba(95, 224, 214, 0.18), inset 0 10px 26px rgba(0, 0, 0, 0.65), 0 0 0 4px #121415, 0 0 0 5px rgba(255, 255, 255, 0.06);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.bk-pad::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none;
+  background: conic-gradient(var(--scan) calc(var(--p) * 1turn), var(--scan-faint) 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.bk-pad:focus-visible { outline: 3px solid var(--room-text); outline-offset: 6px; }
+.bk-pad.is-pressed {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at var(--x) var(--y), #2b5a55 0%, #0f1f1f 70%);
+  box-shadow: inset 0 0 0 1px rgba(95, 224, 214, 0.4), inset 0 10px 26px rgba(0, 0, 0, 0.5), 0 0 0 4px #121415, 0 0 26px rgba(95, 224, 214, 0.35);
+}
+.bk-pad.is-lifted { animation: bk-shake 0.36s ease-in-out; }
+.bk-pad:disabled { cursor: default; }
+.bk-pad:disabled .bk-pad__ring { animation: none; opacity: 0; }
+@keyframes bk-shake {
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+.bk-pad__glyph { width: 46%; fill: none; stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; opacity: 0.5; transition: opacity 0.2s; }
+.bk-pad.is-pressed .bk-pad__glyph { opacity: 0.95; }
+.bk-pad__ring {
+  position: absolute; left: 50%; top: 46%; width: 74%; aspect-ratio: 1; border: 1.5px solid var(--scan-dim); border-radius: 50%;
+  transform: translate(-50%, -50%); animation: bk-pulse 2s ease-out infinite;
+}
+.bk-pad.is-pressed .bk-pad__ring { animation-duration: 0.9s; }
+@keyframes bk-pulse {
+  from { opacity: 0.9; transform: translate(-50%, -50%) scale(0.7); }
+  to { opacity: 0; transform: translate(-50%, -50%) scale(1.15); }
+}
+.bk-pad__ripple {
+  position: absolute; left: var(--x); top: var(--y); width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+  background: rgba(95, 224, 214, 0.5); opacity: 0; pointer-events: none;
+}
+.bk-pad.is-pressed .bk-pad__ripple { animation: bk-ripple 1s ease-out infinite; }
+@keyframes bk-ripple {
+  from { opacity: 0.55; transform: scale(1); }
+  to { opacity: 0; transform: scale(16); }
+}
+.bk-pad__label {
+  position: absolute; bottom: 14px; left: 0; right: 0; text-align: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: rgba(95, 224, 214, 0.85);
+}
+
+.bk-back {
+  align-self: center; padding: 10px; border: 0; background: none; cursor: pointer;
+  font-family: var(--mono); font-size: 12px; color: var(--room-faint); text-decoration: underline; text-underline-offset: 3px;
+}
+.bk-back--center { display: block; margin: 8px auto 0; }
+
+/* ---------- the finished file ---------- */
+.bk-file { animation: bk-thump 0.25s ease-out 0.74s; }
+@keyframes bk-thump { 40% { transform: translateY(3px); } }
+.bk-file__top { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; align-items: start; }
+.bk-mug {
+  position: relative; width: 108px; aspect-ratio: 4 / 5; overflow: hidden; border: 5px solid var(--print); border-bottom-width: 14px;
+  background: var(--chart-paper); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); transform: rotate(-1.5deg);
+}
+.bk-mug__chart span {
+  position: absolute; left: 0; right: 0; padding-left: 3px; border-top: 1px solid rgba(42, 33, 22, 0.35);
+  font-family: var(--mono); font-size: 7.5px; font-weight: 700; line-height: 1.2; color: var(--manila-sub);
+}
+.bk-mug__who { position: absolute; left: 50%; width: 72%; transform: translateX(-50%); fill: var(--silhouette); }
+.bk-mug__placard {
+  position: absolute; left: 12%; right: 12%; bottom: 4px; display: flex; flex-direction: column; padding: 2px 2px 3px;
+  background: var(--felt); color: var(--felt-text); text-align: center; overflow: hidden;
+  font-family: var(--mono); font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; line-height: 1.3; text-transform: uppercase; white-space: nowrap;
+}
+.bk-facts { display: flex; flex-direction: column; gap: 9px; margin: 0; min-width: 0; }
+.bk-fact dd { margin: 2px 0 0; font-family: var(--mono); font-size: 14px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.bk-marks { display: flex; flex-direction: column; gap: 4px; font-family: var(--mono); font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+
+.bk-prints { display: flex; flex-direction: column; gap: 8px; }
+.bk-prints__row { display: grid; grid-template-columns: 1.7fr repeat(4, minmax(0, 1fr)); align-items: end; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.bk-prints__box {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; aspect-ratio: 4 / 5; padding: 4px 2px 3px;
+  border: 1.5px solid rgba(42, 33, 22, 0.45); background: rgba(255, 255, 255, 0.35);
+  font-family: var(--mono); font-size: 8px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--manila-sub);
+}
+.bk-prints__box.is-taken { border-color: var(--manila-ink); background: rgba(255, 255, 255, 0.55); }
+.bk-prints__ink { flex: 1; min-height: 0; width: 96%; transform: rotate(-5deg); opacity: 0.92; animation: bk-press 0.5s ease-out 0.2s both; }
+@keyframes bk-press {
+  from { opacity: 0; transform: rotate(-5deg) scale(1.35); }
+  to { opacity: 0.92; transform: rotate(-5deg); }
+}
+.bk-prints__none { flex: 1; width: 80%; background: repeating-linear-gradient(45deg, rgba(42, 33, 22, 0.13) 0 2px, transparent 2px 6px); }
+
+.bk-file__booked {
+  position: absolute; right: 14px; bottom: 34px; padding: 2px 10px; border-width: 3px; opacity: 0.88; mix-blend-mode: multiply;
+  font-family: var(--display); font-size: 24px; font-weight: 400; letter-spacing: 2px;
+  transform: rotate(-12deg); animation: bk-slam 0.42s cubic-bezier(0.2, 1.35, 0.4, 1) 0.55s both;
+}
+@keyframes bk-slam {
+  from { opacity: 0; transform: scale(2.6) rotate(-22deg); }
+  to { opacity: 0.88; transform: rotate(-12deg); }
+}
+
+.bk-lead { margin: 20px 24px 0; font-size: 15px; line-height: 1.45; text-align: center; color: var(--room-sub); }
+.bk-wait {
+  display: flex; align-items: center; gap: 9px; width: fit-content; margin: 14px auto 0; padding: 8px 14px;
+  border: 1.5px dashed rgba(239, 233, 214, 0.35); border-radius: 999px;
+  font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--room-text);
+}
+.bk-wait__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pending); box-shadow: 0 0 8px var(--pending); animation: bk-blink 1.2s steps(2) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bk__beam { animation: none; }
+}

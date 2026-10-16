@@ -1,0 +1,22 @@
+/* The list of mocks, and the way back from one. */
+.mk-list { max-width: 520px; margin: 0 auto; padding: calc(var(--safe-top) + 32px) 16px calc(var(--safe-bottom) + 32px); }
+.mk-list__kicker { font: 700 11px/1 ui-monospace, Menlo, monospace; letter-spacing: 3px; text-transform: uppercase; color: #8d8a80; }
+.mk-list__title { margin-top: 8px; font-size: 34px; font-weight: 800; letter-spacing: -0.5px; }
+.mk-list__lead { margin-top: 10px; font-size: 15px; line-height: 1.45; color: #b8b4a6; }
+.mk-list__items { display: flex; flex-direction: column; gap: 12px; margin: 24px 0 0; padding: 0; list-style: none; }
+.mk-row {
+  display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 12px; text-decoration: none; color: inherit;
+  background: #1f2122; border: 1px solid #2c2f31;
+}
+.mk-row:active { background: #26292a; }
+.mk-row__game { font: 700 10px/1.4 ui-monospace, Menlo, monospace; letter-spacing: 2px; text-transform: uppercase; color: #d9bd7e; }
+.mk-row__title { font-size: 19px; font-weight: 700; }
+.mk-row__blurb { font-size: 14px; line-height: 1.4; color: #a9a597; }
+
+.mk-loading { min-height: 100dvh; }
+/* Out of the way and half see-through, so it doesn't spoil how the mock feels. */
+.mk-back {
+  position: fixed; z-index: 1000; top: calc(var(--safe-top) + 6px); right: 6px; padding: 4px 9px; border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45); color: rgba(255, 255, 255, 0.75); text-decoration: none;
+  font: 600 11px/1.2 system-ui, sans-serif; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}

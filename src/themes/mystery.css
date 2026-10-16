@@ -1,0 +1,43 @@
+/* Mystery Pub Crawl, "Interrogation Room": the tokens and fonts of Quest-Game's mystery pack
+   (src/packs/mystery/theme.css), copied so a mock looks like the game. Keep them in step when the game changes. */
+@import '@fontsource/archivo-black/latin-400.css';
+@import '@fontsource/space-mono/latin-400.css';
+@import '@fontsource/space-mono/latin-700.css';
+@import '@fontsource/archivo/latin-400.css';
+@import '@fontsource/archivo/latin-500.css';
+@import '@fontsource/archivo/latin-600.css';
+
+:root {
+  --room: #0d0e0f;
+  --room-text: #efe9d6;
+  --room-sub: #b8b4a6;
+  --room-faint: #8d8a80;
+  --wall: #3d4042;
+  --wall-shadow: #26282a;
+  --felt: #161816;
+  --felt-text: #f2efe4;
+  --felt-sub: #c9cdbf;
+  --teal-deep: #0f5754;
+  --accent: #17736f;
+  --accent-hover: #125c59;
+  --warn: #a3342a;
+  --warn-on-dark: #e98679;
+  --manila: #e6cf98;
+  --manila-tab: #d9bd7e;
+  --manila-ink: #2a2116;
+  --manila-sub: #5b4a33;
+  --kraft: #c9a974;
+  --kraft-line: #8e7550;
+  --eyelet: #9aa0a3;
+  --stamp-good: #2f5a32;
+  --stamp-bad: #8f2a22;
+  --stamp-plain: #14544f;
+  --print: #f1f0ec;
+  --chart-paper: #f4ecd5;
+  --silhouette: #8d9294;
+  --paper: #f1f0ec;
+
+  --mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --display: 'Archivo Black', 'Arial Black', system-ui, sans-serif;
+  --body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}

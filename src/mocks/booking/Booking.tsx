@@ -3,15 +3,18 @@
 // desk in the dark, a man behind it, and a lamp that swings round into their face: "Who are you?"), then three steps
 // on one screen: their particulars on a manila booking sheet, a typed letter from the police thanking them and warning that their
 // prints come next, their right thumb on a livescan machine (press and hold; nothing is read, it only looks the part),
-// then the finished file, stamped BOOKED, waiting on the GM's desk.
+// then the file with the inked print and a mugshot to come: the photographer's room, a countdown, the flash, and the
+// phone's own camera for the photo, which goes into the file before it's stamped BOOKED and left on the GM's desk.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import '../../themes/mystery.css';
 import './booking.css';
 import { FINGER, PRINT_H, PRINT_W, hashText, makePrint, type Print } from './fingerprint';
+import { buzz, lessMotion } from './feel';
 import { GoogleMark } from './google';
+import { PhotoRoom } from './PhotoRoom';
 import { SignIn } from './SignIn';
 
-type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked';
+type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked' | 'photo';
 
 interface Particulars {
   name: string;
@@ -43,20 +46,12 @@ const feetInches = (cm: number) => {
   return `${Math.floor(inches / 12)}′${inches % 12}″`;
 };
 
-/** A short buzz where the phone can (Android); iPhones ignore it, and so does Chrome until the first tap. */
-const buzz = (pattern: number | number[]) => {
-  try {
-    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
-    navigator.vibrate?.(pattern);
-  } catch {
-    /* no vibration: fine */
-  }
-};
-
 export default function Booking() {
   const [step, setStep] = useState<Step>('signin');
   const [who, setWho] = useState<Particulars>({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
   const print = useMemo(() => makePrint(`${who.name}|${who.alias}`), [who.name, who.alias]);
+  /** Their mugshot, as a local object URL; it never leaves the phone. */
+  const [photo, setPhoto] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -64,6 +59,8 @@ export default function Booking() {
 
   const startOver = () => {
     setWho({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
+    if (photo) URL.revokeObjectURL(photo);
+    setPhoto(null);
     setStep('signin');
   };
 
@@ -73,6 +70,20 @@ export default function Booking() {
     return (
       <div className="bk bk--scene">
         <InterviewRoom onDone={() => setStep('particulars')} />
+      </div>
+    );
+  }
+
+  if (step === 'photo') {
+    return (
+      <div className="bk bk--scene">
+        <PhotoRoom
+          onDone={(url) => {
+            if (photo) URL.revokeObjectURL(photo);
+            setPhoto(url);
+            setStep('booked');
+          }}
+        />
       </div>
     );
   }
@@ -102,7 +113,7 @@ export default function Booking() {
         ) : step === 'prints' ? (
           <Livescan print={print} onDone={() => setStep('booked')} onBack={() => setStep('particulars')} />
         ) : (
-          <BookedFile who={who} print={print} onAgain={startOver} />
+          <BookedFile who={who} print={print} photo={photo} onPhoto={() => setStep('photo')} onAgain={startOver} />
         )}
       </div>
     </div>
@@ -212,7 +223,7 @@ function InterviewRoom({ onDone }: { onDone(): void }) {
     return () => window.clearTimeout(timer);
   }, [asked, typed, phase]);
 
-  const cls = ['bk-int', at('lit') && 'is-lit', at('turning') && 'is-turned', at('asked') && 'is-asked', at('ready') && 'is-ready'];
+  const cls = ['bk-scene bk-int', at('lit') && 'is-lit', at('turning') && 'is-turned', at('asked') && 'is-asked', at('ready') && 'is-ready'];
   return (
     <section
       className={cls.filter(Boolean).join(' ')}
@@ -223,8 +234,8 @@ function InterviewRoom({ onDone }: { onDone(): void }) {
     >
       {/* Three layers over one stage: the wall and the man, then the desk tilted back in perspective, then the lamp and
           its glare standing up in front. */}
-      <div className="bk-int__stage">
-      <svg className="bk-int__layer" viewBox="0 0 390 844" aria-hidden="true">
+      <div className="bk-scene__stage">
+      <svg className="bk-scene__layer" viewBox="0 0 390 844" aria-hidden="true">
         <defs>
           <linearGradient id={`wall${id}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#2a2d30" />
@@ -315,7 +326,7 @@ function InterviewRoom({ onDone }: { onDone(): void }) {
       </svg>
 
       {/* The desk top, drawn flat and deep, then tilted back by CSS so it lands under him at the back. */}
-      <svg className="bk-int__layer bk-int__desk" viewBox="0 0 390 844" aria-hidden="true">
+      <svg className="bk-scene__layer bk-int__desk" viewBox="0 0 390 844" aria-hidden="true">
         <rect x="-300" y="262" width="1000" height="640" fill={`url(#desk${id})`} />
         <path d="M-300 263H700" stroke="#5a3f2b" strokeWidth="3" />
         <path className="bk-int__seams" d={SEAMS} />
@@ -366,7 +377,7 @@ function InterviewRoom({ onDone }: { onDone(): void }) {
 
       {/* Standing up in front: the stacks at the back of the desk and the ashtray (both in shadow), the lamp, his smoke,
           and the glare. */}
-      <svg className="bk-int__layer" viewBox="0 0 390 844" aria-hidden="true">
+      <svg className="bk-scene__layer" viewBox="0 0 390 844" aria-hidden="true">
         <g className="bk-int__stack">
           {['#332b1d', '#3b3a37', '#372f20', '#3a3426', '#3b3a37', '#332b1d', '#372f20', '#3b3a37', '#3a3426'].map((fill, i) => (
             <rect key={i} x={12 + ((i * 7) % 5)} y={566 - (i + 1) * 6} width="112" height="6" fill={fill} />
@@ -612,14 +623,6 @@ const LETTER = [
   'When asked, place your right thumb on the glass and keep it there until the machine has finished.',
 ];
 const TYPE_MS = 18;
-
-const lessMotion = () => {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch {
-    return false;
-  }
-};
 
 /** A letter from the police, typed out as you watch (tap it to skip), then signed and sealed. */
 function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onBack(): void }) {
@@ -1006,22 +1009,27 @@ function Records({ seed }: { seed: number }) {
 
 /* ---------------------------------------------------------------- 3 · booked */
 
-function BookedFile({ who, print, onAgain }: { who: Particulars; print: Print; onAgain(): void }) {
+/**
+ * The file. First with the print in and the photo still to come, and a Next to the photographer; back from there, the
+ * photo is pasted in, the file stamped BOOKED and left on the GM's desk.
+ */
+function BookedFile({ who, print, photo, onPhoto, onAgain }: { who: Particulars; print: Print; photo: string | null; onPhoto(): void; onAgain(): void }) {
   useEffect(() => {
-    const id = window.setTimeout(() => buzz(35), 520);
+    if (!photo) return;
+    const id = window.setTimeout(() => buzz(35), 1150);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [photo]);
   const number = caseNumber(who.name);
   return (
     <>
-      <article className="bk-folder bk-file">
+      <article className={`bk-folder bk-file${photo ? ' has-photo' : ''}`}>
         <span className="bk-folder__tab">
           Case {number}
           <Paperclip className="bk-clip--tab" />
         </span>
         <div className="bk-folder__body">
           <div className="bk-file__top">
-            <Mugshot heightCm={who.heightCm} alias={who.alias} number={number} />
+            <Mugshot heightCm={who.heightCm} alias={who.alias} number={number} photo={photo} />
             <dl className="bk-facts">
               <Fact label="Name">{who.name}</Fact>
               <Fact label="Goes by">{who.alias}</Fact>
@@ -1052,19 +1060,34 @@ function BookedFile({ who, print, onAgain }: { who: Particulars; print: Print; o
               ))}
             </ol>
           </div>
-          <Stamp tone="red" className="bk-file__booked">
-            Booked
-          </Stamp>
+          {photo ? (
+            <Stamp tone="red" className="bk-file__booked">
+              Booked
+            </Stamp>
+          ) : null}
         </div>
       </article>
-      <p className="bk-lead">Your file is on the GM’s desk. You’ll be let into the game once they’ve had a look.</p>
-      <div className="bk-wait" role="status">
-        <span className="bk-wait__dot" aria-hidden="true" />
-        Waiting for the GM
-      </div>
-      <button type="button" className="bk-back bk-back--center" onClick={onAgain}>
-        Start over (mock only)
-      </button>
+      {photo ? (
+        <>
+          <p className="bk-lead">Your file is on the GM’s desk. You’ll be let into the game once they’ve had a look.</p>
+          <div className="bk-wait" role="status">
+            <span className="bk-wait__dot" aria-hidden="true" />
+            Waiting for the GM
+          </div>
+          <button type="button" className="bk-back bk-back--center" onClick={onAgain}>
+            Start over (mock only)
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="bk-lead">One more thing for your file: your photograph.</p>
+          <div className="bk-next">
+            <button type="button" className="bk-go" onClick={onPhoto}>
+              Next <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -1078,12 +1101,16 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** A silhouette against a height chart, standing as tall as they said, holding a placard. */
-function Mugshot({ heightCm, alias, number }: { heightCm: number; alias: string; number: string }) {
+/**
+ * Against a height chart, holding a placard: their photo once it's taken (in old black and white), or until then a
+ * silhouette standing as tall as they said.
+ */
+function Mugshot({ heightCm, alias, number, photo }: { heightCm: number; alias: string; number: string; photo: string | null }) {
   // The chart runs 140–210 cm over the panel; the head's top sits at their height.
   const top = ((210 - heightCm) / 70) * 100;
   return (
-    <div className="bk-mug" aria-label={`Mugshot placeholder, ${heightCm} cm`} role="img">
+    <div className={`bk-mug${photo ? ' has-photo' : ''}`} aria-label={photo ? 'Your mugshot' : `Mugshot placeholder, ${heightCm} cm`} role="img">
+      {photo ? <img className="bk-mug__photo" src={photo} alt="" /> : null}
       <div className="bk-mug__chart" aria-hidden="true">
         {[200, 190, 180, 170, 160, 150].map((cm) => (
           <span key={cm} style={{ top: `${((210 - cm) / 70) * 100}%` }}>
@@ -1091,10 +1118,12 @@ function Mugshot({ heightCm, alias, number }: { heightCm: number; alias: string;
           </span>
         ))}
       </div>
-      <svg className="bk-mug__who" viewBox="0 0 100 120" preserveAspectRatio="xMidYMin meet" style={{ top: `${top}%` }} aria-hidden="true">
-        <circle cx="50" cy="28" r="20" />
-        <path d="M12 120 C12 78 28 58 50 58 C72 58 88 78 88 120 Z" />
-      </svg>
+      {photo ? null : (
+        <svg className="bk-mug__who" viewBox="0 0 100 120" preserveAspectRatio="xMidYMin meet" style={{ top: `${top}%` }} aria-hidden="true">
+          <circle cx="50" cy="28" r="20" />
+          <path d="M12 120 C12 78 28 58 50 58 C72 58 88 78 88 120 Z" />
+        </svg>
+      )}
       <div className="bk-mug__placard" aria-hidden="true">
         <span>{alias || 'Unknown'}</span>
         <span>{number}</span>

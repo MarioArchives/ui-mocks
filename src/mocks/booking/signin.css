@@ -59,9 +59,12 @@
 
 .si__head { flex: none; padding: 22px 24px 0; text-align: center; }
 .si__title {
-  margin-top: 8px; font-family: var(--display); font-size: clamp(38px, 12vw, 50px); font-weight: 400; line-height: 0.98; text-transform: uppercase;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 4px;
+  font-family: var(--display); font-size: clamp(42px, 14.5vw, 60px); font-weight: 400; line-height: 0.96; text-transform: uppercase;
   color: #efe9d6; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
+.si__title-a { font-size: 0.46em; letter-spacing: 0.05em; }
+.si__title-c { font-size: 0.6em; letter-spacing: 0.04em; }
 
 .si__scene { position: relative; flex: 1 1 auto; min-height: 120px; max-height: 320px; margin: 6px 0; color: #f4f4f0; }
 .si__scene svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }

@@ -28,10 +28,10 @@ export function SignIn({ name, email, onDone }: { name: string; email: string; o
         <span className="si__tape si__tape--thin" />
       </div>
       <header className="si__head">
+        {/* Three lines, the murder biggest; the spaces between keep the name whole when it's read out. */}
         <h1 className="si__title">
-          Mystery
-          <br />
-          Pub Crawl
+          <span className="si__title-a">A Manchester</span> <span className="si__title-b">Murder:</span>{' '}
+          <span className="si__title-c">Pub Crawl</span>
         </h1>
       </header>
       <ChalkOutline />
@@ -108,7 +108,7 @@ function AccountPicker({ name, email, signing, onPick, onClose }: { name: string
             {signing ? 'Signing you in…' : 'Choose an account'}
           </h2>
           <p className="gg__sub">
-            to continue to <strong>Mystery Pub Crawl</strong>
+            to continue to <strong>A Manchester Murder: Pub Crawl</strong>
           </p>
           <ul className="gg__list">
             <li>

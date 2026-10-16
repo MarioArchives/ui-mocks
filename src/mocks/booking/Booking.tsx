@@ -1,12 +1,13 @@
 // Booking desk (Mystery Pub Crawl): what a new player sees after signing in with Google. Three steps on one screen:
-// their particulars on a manila booking sheet, their right thumb on a livescan machine (press and hold; nothing is
-// read, it only looks the part), then the finished file, stamped BOOKED, waiting on the GM's desk.
+// their particulars on a manila booking sheet, a typed letter from the police thanking them and warning that their
+// prints come next, their right thumb on a livescan machine (press and hold; nothing is read, it only looks the part),
+// then the finished file, stamped BOOKED, waiting on the GM's desk.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import '../../themes/mystery.css';
 import './booking.css';
 import { FINGER, PRINT_H, PRINT_W, hashText, makePrint, type Print } from './fingerprint';
 
-type Step = 'particulars' | 'prints' | 'booked';
+type Step = 'particulars' | 'letter' | 'prints' | 'booked';
 
 interface Particulars {
   name: string;
@@ -19,6 +20,7 @@ interface Particulars {
 /** Who the mock pretends signed in with Google. */
 const GOOGLE_NAME = 'Sam Rivers';
 const POISONS = ['Pint', 'Wine', 'Gin', 'Cocktail', 'Shots', 'Soft'];
+/** The step tabs; the letter counts as the start of the prints. */
 const STEPS: { id: Step; label: string }[] = [
   { id: 'particulars', label: 'Particulars' },
   { id: 'prints', label: 'Prints' },
@@ -78,7 +80,9 @@ export default function Booking() {
       <Steps step={step} />
       <div key={step} className="bk-step">
         {step === 'particulars' ? (
-          <ParticularsSheet who={who} onChange={setWho} onDone={() => setStep('prints')} />
+          <ParticularsSheet who={who} onChange={setWho} onDone={() => setStep('letter')} />
+        ) : step === 'letter' ? (
+          <Letter who={who} onDone={() => setStep('prints')} onBack={() => setStep('particulars')} />
         ) : step === 'prints' ? (
           <Livescan print={print} onDone={() => setStep('booked')} onBack={() => setStep('particulars')} />
         ) : (
@@ -104,7 +108,7 @@ function GoogleG() {
 
 /** The three steps as file tabs: done ones ticked, this one lifted out in manila. */
 function Steps({ step }: { step: Step }) {
-  const at = STEPS.findIndex((s) => s.id === step);
+  const at = STEPS.findIndex((s) => s.id === (step === 'letter' ? 'prints' : step));
   return (
     <ol className="bk-steps" aria-label="Booking steps">
       {STEPS.map((s, i) => (
@@ -277,6 +281,145 @@ function Field({ label, hint, missing = false, children }: { label: string; hint
       {children(id)}
       {hint ? <span className="bk-hint">{hint}</span> : null}
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------- 1½ · the letter */
+
+const LETTER = [
+  'Thank you for your cooperation.',
+  'We will now proceed to take your fingerprints for the purposes of the investigation.',
+  'When asked, place your right thumb on the glass and keep it there until the machine has finished.',
+];
+const TYPE_MS = 18;
+
+const lessMotion = () => {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch {
+    return false;
+  }
+};
+
+/** A letter from the police, typed out as you watch (tap it to skip), then signed and sealed. */
+function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onBack(): void }) {
+  const total = LETTER.reduce((n, line) => n + line.length, 0);
+  const [typed, setTyped] = useState(() => (lessMotion() ? total : 0));
+  const signed = typed >= total;
+
+  useEffect(() => {
+    if (signed) return;
+    const id = window.setInterval(() => setTyped((n) => Math.min(total, n + 1)), TYPE_MS);
+    return () => window.clearInterval(id);
+  }, [signed, total]);
+
+  // The seal lands just after the signature is drawn.
+  useEffect(() => {
+    if (!signed) return;
+    const id = window.setTimeout(() => buzz(30), 1050);
+    return () => window.clearTimeout(id);
+  }, [signed]);
+
+  const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  let left = typed;
+  let caretPlaced = false;
+  const lines = LETTER.map((line) => {
+    const shown = Math.max(0, Math.min(line.length, left));
+    left -= line.length;
+    const caret = !caretPlaced && shown < line.length;
+    if (caret) caretPlaced = true;
+    return { line, shown, caret };
+  });
+
+  return (
+    <>
+      <div className="bk-folder">
+        <span className="bk-folder__tab">From the desk sergeant</span>
+        <div className="bk-folder__body">
+          <article className={`bk-letter${signed ? ' is-signed' : ''}`} onClick={() => setTyped(total)}>
+            <Paperclip className="bk-clip--letter" />
+            <header className="bk-letter__head">
+              <Crest />
+              <div className="bk-letter__org">
+                <strong>Blackwood Manor Police</strong>
+                <span>Criminal Investigation Dept.</span>
+              </div>
+            </header>
+            <dl className="bk-letter__meta">
+              <dt>Ref</dt>
+              <dd>BM/CID/{sheetNumber(who.name || GOOGLE_NAME)}</dd>
+              <dt>Date</dt>
+              <dd>{today}</dd>
+              <dt>Re</dt>
+              <dd>
+                {who.name}, a.k.a. “{who.alias}”
+              </dd>
+            </dl>
+            <div className="bk-letter__body">
+              <p>Dear {who.name},</p>
+              {lines.map(({ line, shown, caret }) => (
+                <p key={line}>
+                  <span className="bk-sr">{line}</span>
+                  <span aria-hidden="true">
+                    {line.slice(0, shown)}
+                    {caret ? <span className="bk-letter__caret" /> : null}
+                    <span className="bk-letter__rest">{line.slice(shown)}</span>
+                  </span>
+                </p>
+              ))}
+            </div>
+            <footer className="bk-letter__sign">
+              <span>Yours faithfully,</span>
+              <svg className="bk-letter__sig" viewBox="0 0 130 44" aria-hidden="true">
+                <path
+                  pathLength={1}
+                  d="M4 32C12 10 20 4 22 14S16 38 26 30 36 10 40 18 38 34 48 26 58 12 62 20 60 32 70 26 80 14 86 18 84 30 94 26 104 18 110 22M30 38C56 34 90 34 126 30"
+                />
+              </svg>
+              <span className="bk-letter__who">Desk Sergeant, Blackwood Manor PD</span>
+              <Seal />
+            </footer>
+          </article>
+          <button type="button" className="bk-go" onClick={onDone}>
+            Next <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </div>
+      <button type="button" className="bk-back bk-back--center" onClick={onBack}>
+        ← Back to particulars
+      </button>
+    </>
+  );
+}
+
+/** The force's shield, for the letterhead. */
+function Crest() {
+  return (
+    <svg className="bk-letter__crest" viewBox="0 0 30 34" aria-hidden="true">
+      <path d="M15 1.5 28 6v10.5C28 24.5 22.5 30 15 32.5 7.5 30 2 24.5 2 16.5V6z" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M15 4.8 25 8.3v8.2C25 22.6 20.8 27 15 29.2 9.2 27 5 22.6 5 16.5V8.3z" fill="currentColor" opacity="0.12" />
+      <polygon points="15,9 16.9,14.4 22.6,14.6 18.1,18 19.7,23.5 15,20.3 10.3,23.5 11.9,18 7.4,14.6 13.1,14.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** A round inked seal with the force's name running round the rim. */
+function Seal() {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  return (
+    <svg className="bk-seal" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <path id={`s${uid}`} d="M50 50m-36 0a36 36 0 1 1 72 0a36 36 0 1 1-72 0" />
+      </defs>
+      <circle cx="50" cy="50" r="47" />
+      <circle cx="50" cy="50" r="26" className="bk-seal__thin" />
+      <text>
+        <textPath href={`#s${uid}`} textLength="224" lengthAdjust="spacing">
+          BLACKWOOD MANOR PD ★ C.I.D. ★
+        </textPath>
+      </text>
+      <polygon points="50,36 53.5,45.1 63.3,45.7 55.7,51.9 58.2,61.3 50,56 41.8,61.3 44.3,51.9 36.7,45.7 46.5,45.1" />
+    </svg>
   );
 }
 

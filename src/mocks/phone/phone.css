@@ -1,0 +1,310 @@
+/*
+ * Save our number, in the mystery pack's look: the dark room and torch of the booking desk, and three ways to hand over
+ * the police's number: a letterpress calling card on the desk, a phone ringing with the call, and a typed notice on a
+ * cork board with the number on tear-off tabs.
+ */
+.ph {
+  --ph-glow: #5fe0d6;
+  --ph-ink: #1e2330;
+  --ph-pen: #233072;
+  --ph-stock: #f2e9d0;
+  --ph-cork: #a67a4b;
+  /* Paper fibre: brown speckle, faint, tiled over cards and notices. */
+  --ph-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.24 0 0 0 0 0.12 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  position: relative; isolation: isolate; overflow: clip; display: flex; flex-direction: column;
+  max-width: 480px; min-height: 100dvh; margin: 0 auto; padding: calc(var(--safe-top) + 52px) 16px calc(24px + var(--safe-bottom));
+  background: var(--room); color: var(--room-text); font-family: var(--body);
+}
+.ph__beam {
+  position: absolute; z-index: -1; left: -25%; right: -25%; top: 40px; height: 640px; pointer-events: none;
+  background: radial-gradient(50% 46% at 50% 45%, rgba(233, 226, 200, 0.2) 0%, rgba(233, 226, 200, 0.09) 40%, rgba(233, 226, 200, 0.02) 64%, transparent 76%);
+  animation: ph-torch 9s ease-in-out infinite alternate;
+}
+@keyframes ph-torch {
+  from { transform: translate(-12px, 0) rotate(-1.5deg); }
+  to { transform: translate(12px, 12px) rotate(1.5deg); }
+}
+@keyframes ph-rise { from { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- shared: the heading, the two actions, the way on ---------- */
+.ph-head { display: flex; flex-direction: column; gap: 8px; animation: ph-rise 0.4s ease-out both; }
+.ph-head__kicker { font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: var(--manila-tab); }
+.ph-head__title { font-family: var(--display); font-size: clamp(25px, 7.5vw, 32px); font-weight: 400; line-height: 1.05; text-wrap: balance; }
+.ph-head__copy { font-size: 15px; line-height: 1.45; color: var(--room-sub); text-wrap: pretty; }
+
+.ph-icon { flex: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.ph-actions { display: flex; flex-direction: column; gap: 10px; animation: ph-rise 0.4s ease-out 0.35s both; }
+/* The big go button, as at the booking desk: teal with a hard shadow. */
+.ph-go {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; margin: 0; padding: 0 16px;
+  border: 0; border-radius: 4px; background: var(--accent); color: #fff; cursor: pointer; box-shadow: 0 4px 0 var(--teal-deep);
+  font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+}
+.ph-go:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--teal-deep); }
+.ph-go:focus-visible, .ph-copy:focus-visible, .ph-next:focus-visible { outline: 3px solid var(--room-text); outline-offset: 3px; }
+.ph-copy {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin: 0; padding: 0 16px;
+  border: 1.5px solid rgba(239, 233, 214, 0.32); border-radius: 4px; background: rgba(255, 255, 255, 0.03); color: var(--room-text); cursor: pointer;
+  font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ph-copy:active { background: rgba(255, 255, 255, 0.08); }
+.ph-copy.is-copied { border-color: var(--ph-glow); color: var(--ph-glow); }
+.ph-said { min-height: 1.45em; font-size: 13px; line-height: 1.45; text-align: center; color: var(--room-faint); text-wrap: pretty; }
+
+.ph-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; margin: 0; padding: 0 12px;
+  border: 0; background: none; color: inherit; cursor: pointer;
+  font-family: var(--mono); font-size: 12px; text-decoration: underline; text-underline-offset: 3px;
+}
+.ph-link:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+/* The way on sits at the foot of the screen: an outline until they've saved the number, then manila. */
+.ph-foot { margin-top: auto; padding-top: 20px; animation: ph-rise 0.4s ease-out 0.45s both; }
+.ph-next {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; margin: 0; padding: 0 16px;
+  border: 1.5px solid rgba(239, 233, 214, 0.5); border-radius: 4px; background: transparent; color: var(--room-text); cursor: pointer;
+  font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  transition: background-color 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s;
+}
+.ph-next:active { transform: translateY(3px); }
+.ph-next.is-ready { border-color: var(--manila); background: var(--manila); color: var(--manila-ink); box-shadow: 0 4px 0 var(--kraft-line); }
+.ph-next.is-ready:active { box-shadow: 0 1px 0 var(--kraft-line); }
+
+/* Done (in the mock): a manila slip, stamped. */
+.ph-slip {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 16px 4px; border-radius: 3px;
+  background-color: var(--manila); background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.05));
+  color: var(--manila-ink); text-align: center; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.55);
+  animation: ph-slip-in 0.3s ease-out both;
+}
+@keyframes ph-slip-in { from { opacity: 0; transform: translateY(16px); } }
+.ph-slip__stamp {
+  padding: 1px 12px 0; border: 3px solid currentColor; color: var(--stamp-bad); mix-blend-mode: multiply; opacity: 0.88;
+  font-family: var(--display); font-size: 26px; letter-spacing: 3px; line-height: 1.25; text-transform: uppercase;
+  transform: rotate(-7deg); animation: ph-slam 0.42s cubic-bezier(0.2, 1.35, 0.4, 1) 0.15s both;
+}
+@keyframes ph-slam {
+  from { opacity: 0; transform: scale(2.4) rotate(-20deg); }
+  to { opacity: 0.88; transform: rotate(-7deg); }
+}
+.ph-slip__line { font-family: var(--mono); font-size: 13px; line-height: 1.45; text-wrap: balance; }
+.ph-slip .ph-link { color: var(--manila-sub); }
+
+/* The force's bee: ink body, tinted wings, a double ring. */
+.ph-bee { display: block; fill: currentColor; }
+.ph-bee__line { fill: none; stroke: currentColor; stroke-linecap: round; }
+.ph-bee__wings { fill: currentColor; fill-opacity: 0.14; stroke: currentColor; stroke-width: 1.1; }
+
+/* ---------- 1 · the calling card: letterpress on cream stock, on a dark desk ---------- */
+.ph--desk {
+  background-color: #100d0a;
+  background-image:
+    repeating-linear-gradient(91deg, rgba(255, 236, 200, 0.018) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(89deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 41px);
+}
+.ph--desk .ph__beam { top: 110px; }
+.ph-desk { position: relative; display: grid; place-items: center; padding: 32px 0 34px; }
+/* An old coffee ring, half under the card. */
+.ph-desk__ring {
+  position: absolute; right: -6px; top: 6px; width: 132px; height: 132px; border-radius: 50%;
+  background: radial-gradient(circle, transparent 55%, rgba(176, 124, 72, 0.2) 58%, rgba(176, 124, 72, 0.07) 63%, transparent 67%);
+}
+.ph-card {
+  position: relative; width: min(100% - 14px, 350px); aspect-ratio: 85 / 55; container-type: inline-size; border-radius: 3px;
+  background-color: var(--ph-stock); color: var(--ph-ink);
+  background-image: linear-gradient(155deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 45%, rgba(60, 40, 10, 0.07)), var(--ph-grain);
+  /* Thick stock: a pale edge under the face, then its shadow on the desk. */
+  box-shadow: 0 1px 0 #d6c9a8, 0 2px 0 #b3a27c, 0 16px 26px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4);
+  transform: rotate(-3.5deg); animation: ph-deal 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.05) 0.15s both;
+}
+@keyframes ph-deal { from { opacity: 0; transform: translate(34px, -70px) rotate(-17deg) scale(1.08); } }
+/* Everything on the card scales with it (cqw), and is pressed in: a highlight under each stroke. */
+.ph-card__face {
+  position: absolute; inset: 0; display: flex; flex-direction: column; padding: 6cqw 6cqw 4.4cqw;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.ph-card__head { display: flex; align-items: center; gap: 3.6cqw; }
+/* The force's honeycomb stamp for a crest, in its purple ink, pressed a little crooked like a real stamp. */
+.ph-card__stamp {
+  flex: none; display: block; width: 19cqw; height: auto; aspect-ratio: 100 / 88; margin: -1.5cqw 0;
+  color: #5f2d95; opacity: 0.9; mix-blend-mode: multiply; transform: rotate(-6deg);
+}
+.ph-card__org { display: flex; flex-direction: column; gap: 1.3cqw; min-width: 0; }
+.ph-card__name { font-family: var(--display); font-size: 4.8cqw; font-weight: 400; line-height: 1.04; letter-spacing: 0.02em; text-transform: uppercase; }
+.ph-card__name span { display: block; }
+.ph-card__dept { font-family: var(--mono); font-size: 2.6cqw; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-deep); }
+.ph-card__num { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6cqw; margin: auto 0; }
+.ph-card__tel { font-family: var(--mono); font-size: 2.4cqw; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--manila-sub); }
+.ph-card__digits { position: relative; font-family: var(--mono); font-size: 8.8cqw; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+.ph-card__pen { position: absolute; left: -2%; bottom: -0.36em; width: 104%; height: 0.42em; overflow: visible; }
+.ph-card__pen path {
+  fill: none; stroke: var(--ph-pen); stroke-width: 2; stroke-linecap: round; opacity: 0.85; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: ph-pen 0.35s ease-in-out 0.95s forwards;
+}
+.ph-card__pen path + path { animation-delay: 1.25s; }
+@keyframes ph-pen { to { stroke-dashoffset: 0; } }
+.ph-card__foot {
+  display: flex; justify-content: space-between; gap: 2cqw; padding-top: 1.6cqw; border-top: 0.35cqw solid rgba(30, 35, 48, 0.75);
+  font-family: var(--mono); font-size: 2.4cqw; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--manila-sub);
+}
+
+/* ---------- 2 · the incoming call: a phone in a phone, ringing ---------- */
+.ph--call .ph__beam { top: 150px; }
+.ph-preview { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; margin: 22px 0 18px; }
+.ph-phone {
+  position: relative; width: min(236px, 64vw); aspect-ratio: 9 / 13.2; border-radius: 38px; background: #050607;
+  box-shadow: inset 0 0 0 1.5px #2a2e31, 0 0 0 1px #000, 0 18px 36px rgba(0, 0, 0, 0.6);
+  animation: ph-rise 0.45s ease-out 0.1s both, ph-buzz 2.6s linear 1s infinite;
+}
+/* It rings in bursts: a short shiver, then still. */
+@keyframes ph-buzz {
+  0%, 26%, 100% { transform: none; }
+  2%, 6%, 10%, 14%, 18%, 22% { transform: translateX(-1.5px) rotate(-0.8deg); }
+  4%, 8%, 12%, 16%, 20%, 24% { transform: translateX(1.5px) rotate(0.8deg); }
+}
+.ph-phone__screen {
+  position: absolute; inset: 8px; display: flex; flex-direction: column; align-items: center; overflow: hidden; border-radius: 30px;
+  container-type: inline-size; color: var(--room-text); text-align: center;
+  background: radial-gradient(130% 60% at 50% 0%, #1b4744 0%, #0c1a1a 55%, #070909 100%);
+}
+.ph-call__bar {
+  display: flex; align-items: center; justify-content: space-between; align-self: stretch; padding: 4.6cqw 8cqw 0 9cqw;
+  font-family: var(--mono); font-size: 4.4cqw; font-weight: 700;
+}
+.ph-call__icons { width: 13cqw; height: 4cqw; fill: currentColor; }
+.ph-call__icons .ph-call__low { fill: var(--warn-on-dark); }
+.ph-call__island { position: absolute; left: 50%; top: 3.4cqw; width: 30cqw; height: 8.6cqw; border-radius: 99px; background: #000; transform: translateX(-50%); }
+.ph-call__kind { margin-top: 10cqw; font-family: var(--mono); font-size: 4cqw; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--room-sub); }
+.ph-call__face { position: relative; width: 32cqw; height: 32cqw; margin-top: 7cqw; }
+.ph-call__bee {
+  position: relative; width: 100%; height: 100%; padding: 4.5cqw; border-radius: 50%; color: var(--manila);
+  background: radial-gradient(circle at 35% 30%, #22524f, #0c2422 75%); box-shadow: 0 0 0 1px rgba(95, 224, 214, 0.25);
+}
+/* Rings going out from the caller, one after the other. */
+.ph-call__ring { position: absolute; inset: 0; border: 1.5px solid var(--ph-glow); border-radius: 50%; opacity: 0; animation: ph-ring 2.6s ease-out infinite; }
+.ph-call__ring + .ph-call__ring { animation-delay: 0.6s; }
+@keyframes ph-ring {
+  0% { opacity: 0.75; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(1.75); }
+}
+.ph-call__name { margin-top: 6cqw; padding: 0 8cqw; font-size: 8.4cqw; font-weight: 600; line-height: 1.14; text-wrap: balance; }
+.ph-call__num { margin-top: 2.4cqw; font-family: var(--mono); font-size: 7.4cqw; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; color: var(--room-sub); }
+.ph-call__btns { display: flex; justify-content: space-between; align-self: stretch; margin-top: auto; padding: 0 11cqw 9cqw; }
+.ph-call__btn { display: flex; flex-direction: column; align-items: center; gap: 2.4cqw; font-family: var(--mono); font-size: 3.8cqw; color: var(--room-sub); }
+.ph-call__disc { display: grid; place-items: center; width: 21cqw; height: 21cqw; border-radius: 50%; color: #fff; }
+.ph-call__disc--no { background: var(--warn); }
+.ph-call__disc--yes { background: var(--accent); animation: ph-bob 2.6s ease-in-out infinite; }
+@keyframes ph-bob {
+  0%, 50%, 100% { transform: none; }
+  20% { transform: translateY(-3cqw); }
+  35% { transform: translateY(-0.6cqw); }
+}
+.ph-call__handset { width: 9.5cqw; height: 9.5cqw; fill: currentColor; }
+/* A manila tag tied on, so nobody takes it for a real call. */
+.ph-preview__tag {
+  position: absolute; top: 64px; left: calc(50% + min(118px, 32vw) - 56px); display: flex; align-items: center; gap: 7px; padding: 5px 10px 4px 8px;
+  border-radius: 3px; background: var(--manila); color: var(--manila-ink); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  transform: rotate(8deg); animation: ph-tag 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) 0.6s both;
+}
+.ph-preview__tag::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--room); box-shadow: inset 0 0 0 1.5px var(--eyelet); }
+@keyframes ph-tag { from { opacity: 0; transform: rotate(-10deg) scale(0.7); } }
+.ph-preview__cap { font-family: var(--mono); font-size: 12px; color: var(--room-faint); }
+
+/* ---------- 3 · the notice: typed, pinned to the cork board, with tear-off tabs ---------- */
+.ph--board { padding-top: calc(var(--safe-top) + 46px); }
+.ph--board .ph__beam { top: -20px; }
+.ph-board {
+  position: relative; z-index: 2; padding: 22px 10px 26px; border: 8px solid #3a2a1c; border-radius: 4px;
+  background-color: var(--ph-cork);
+  background-image:
+    radial-gradient(rgba(70, 40, 15, 0.55) 0.8px, transparent 1.3px),
+    radial-gradient(rgba(255, 225, 180, 0.22) 0.8px, transparent 1.3px),
+    radial-gradient(rgba(70, 40, 15, 0.3) 1.2px, transparent 1.8px);
+  background-size: 6px 6px, 9px 9px, 13px 13px; background-position: 0 0, 2px 4px, 5px 1px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), inset 0 0 36px rgba(0, 0, 0, 0.55), 0 6px 0 rgba(0, 0, 0, 0.55);
+  animation: ph-rise 0.4s ease-out both;
+}
+/* The torch on the board. */
+.ph-board::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(70% 50% at 50% 35%, rgba(255, 240, 210, 0.14), transparent 70%);
+}
+/* An older notice, mostly covered. */
+.ph-board__scrap {
+  position: absolute; z-index: 0; right: 4px; top: 10px; width: 120px; height: 90px; background-color: var(--kraft);
+  background-image: var(--ph-grain); box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35); transform: rotate(7deg);
+}
+.ph-notice {
+  position: relative; z-index: 1; transform: rotate(-1.2deg);
+  /* A drop-shadow follows the shape, so a missing tab shows cork with no shadow. */
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.4)) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.28));
+  animation: ph-pin-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1) 0.1s both;
+}
+@keyframes ph-pin-in { from { opacity: 0; transform: translateY(-18px) rotate(3deg); } }
+.ph-notice__sheet {
+  position: relative; padding: 28px 18px 14px; background-color: var(--paper); background-image: var(--ph-grain); color: var(--manila-ink);
+}
+.ph-pin {
+  position: absolute; top: 9px; width: 15px; height: 15px; border-radius: 50%; box-shadow: 2px 4px 3px rgba(0, 0, 0, 0.4);
+  background: radial-gradient(circle at 35% 30%, #ffb2a6 0 12%, #c8392b 42%, #6f1a12 100%);
+}
+.ph-pin--l { left: 13px; }
+.ph-pin--r { right: 13px; background: radial-gradient(circle at 35% 30%, #b8fff8 0 12%, var(--accent) 45%, #0a3836 100%); }
+/* Typed: a touch of ink bleed. */
+.ph-notice__title, .ph-notice__body { font-family: var(--mono); text-shadow: 0 0 0.6px rgba(42, 33, 22, 0.55); }
+.ph-notice__title {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding-bottom: 10px; border-bottom: 3px double var(--manila-ink);
+  font-weight: 700; text-align: center; text-transform: uppercase;
+}
+.ph-notice__big { margin-right: -0.14em; font-size: clamp(34px, 11vw, 44px); letter-spacing: 0.14em; line-height: 1; }
+.ph-notice__to { margin-right: -0.24em; font-size: 13px; letter-spacing: 0.24em; }
+.ph-notice__body { display: flex; flex-direction: column; gap: 9px; margin-top: 12px; font-size: 13.5px; line-height: 1.5; }
+.ph-notice__save { margin-top: 2px; font-weight: 700; }
+.ph-notice__num { margin-top: -6px; font-size: clamp(22px, 7vw, 28px); font-weight: 700; line-height: 1.2; text-align: center; white-space: nowrap; }
+.ph-notice__take { margin-top: 2px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.18em; text-align: center; text-transform: uppercase; color: var(--manila-sub); }
+
+.ph-tabs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.ph-tabs li { position: relative; min-width: 0; }
+/* What a torn tab leaves behind: a ragged stub along the fold. */
+.ph-tabs li.is-gone::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 7px; background-color: var(--paper);
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 91% 100%, 80% 45%, 68% 90%, 57% 35%, 45% 100%, 33% 50%, 21% 95%, 10% 40%, 0 85%);
+}
+.ph-tab {
+  position: relative; display: flex; justify-content: center; width: 100%; margin: 0; padding: 10px 0 12px;
+  border: 0; border-top: 1.5px dashed rgba(42, 33, 22, 0.45); border-radius: 0 0 2px 2px; cursor: pointer;
+  background-color: var(--paper); background-image: var(--ph-grain); color: var(--manila-ink);
+  transform-origin: 100% 0; transition: transform 0.12s ease-out; touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+/* Scissor cuts between the tabs. */
+.ph-tabs li + li .ph-tab { box-shadow: inset 1px 0 0 rgba(42, 33, 22, 0.28); }
+.ph-tab:active { transform: rotate(-4deg) translateY(2px); }
+.ph-tab:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+/* Printed sideways, reading upwards, like any lost-cat flyer. */
+.ph-tab__print {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; writing-mode: vertical-rl; transform: rotate(180deg);
+  font-family: var(--mono); font-weight: 700; white-space: nowrap; text-shadow: 0 0 0.6px rgba(42, 33, 22, 0.55);
+}
+.ph-tab__who { font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--manila-sub); }
+.ph-tab__num { font-size: 12.5px; }
+/* Torn off: the near corner gives first, then it drops away. */
+.ph-tab.is-torn { z-index: 3; pointer-events: none; cursor: default; animation: ph-tear 0.95s both; }
+@keyframes ph-tear {
+  0% { transform: none; animation-timing-function: ease-out; }
+  20% { transform: rotate(-9deg); animation-timing-function: ease-in-out; }
+  32% { transform: translate(-4px, 10px) rotate(-14deg); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  80% { opacity: 1; }
+  100% { transform: translate(-36px, 320px) rotate(-70deg); opacity: 0; }
+}
+
+.ph--board .ph-said { margin-top: 16px; color: var(--room-sub); }
+.ph-copylink { align-self: center; margin-top: 2px; font-size: 13px; color: var(--room-text); transition: color 0.2s; }
+.ph-copylink .ph-icon { width: 17px; height: 17px; }
+.ph-copylink.is-copied { color: var(--ph-glow); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ph__beam { animation: none; }
+}

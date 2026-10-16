@@ -1,0 +1,324 @@
+/*
+ * The landing (sign-in) page, five ways round. Shared first: the dark room, the police light, the striped tape and how it
+ * is pulled across, the chalk outline, the title and text, and the manila case file. Then each version's own layout.
+ * Both top corners stay clear for the version pill (left) and the ‹ Mocks pill (right).
+ */
+.ld {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; flex-direction: column; width: 100%; max-width: 480px; min-height: 100dvh; margin: 0 auto;
+  background: var(--room); color: var(--room-text); font-family: var(--body);
+}
+
+/* A police car somewhere off to the left: red twice, blue twice, over and over, faint on the walls. */
+.ld-siren { position: absolute; z-index: -1; inset: 0; pointer-events: none; }
+.ld-siren::before, .ld-siren::after { content: ''; position: absolute; inset: 0; opacity: 0; animation: ld-red 1.6s linear infinite; }
+.ld-siren::before { background: radial-gradient(75% 55% at 0% 48%, rgba(226, 38, 38, 0.3), rgba(226, 38, 38, 0.08) 55%, transparent 80%); }
+.ld-siren::after {
+  background: radial-gradient(75% 55% at 0% 52%, rgba(46, 96, 238, 0.32), rgba(46, 96, 238, 0.08) 55%, transparent 80%);
+  animation-name: ld-blue;
+}
+/* Two cars, one each side: the red on the left, then the blue on the right. */
+.ld-siren--both::after {
+  background: radial-gradient(75% 55% at 100% 50%, rgba(46, 96, 238, 0.32), rgba(46, 96, 238, 0.08) 55%, transparent 80%);
+}
+@keyframes ld-red {
+  0%, 9% { opacity: 1; }
+  12%, 17% { opacity: 0; }
+  20%, 29% { opacity: 1; }
+  32%, 100% { opacity: 0; }
+}
+@keyframes ld-blue {
+  0%, 49% { opacity: 0; }
+  50%, 59% { opacity: 1; }
+  62%, 67% { opacity: 0; }
+  70%, 79% { opacity: 1; }
+  82%, 100% { opacity: 0; }
+}
+
+/* Police tape: red and yellow stripes and a little sheen, no writing. Hidden at first, then pulled across from its left
+   end (or with --rtl from its right end, --down from the top, --up from the bottom). Each version sets where it lies,
+   how long and thick it is, and its delay. The shadow is on the group (.ld-tapes), since the clip would cut its own. */
+.ld-tapes { position: absolute; inset: 0; pointer-events: none; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35)); }
+.ld-tape {
+  --band: 15px;
+  display: block; height: 30px;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.18)),
+    repeating-linear-gradient(-45deg, #f2c318 0 var(--band), #c62a1f var(--band) calc(var(--band) * 2));
+  clip-path: inset(0 100% 0 0); animation: ld-unroll-right 0.55s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
+}
+.ld-tape--rtl { clip-path: inset(0 0 0 100%); animation-name: ld-unroll-left; }
+/* Running down the screen: the same tape turned a quarter, so the stripes and sheen turn too. */
+.ld-tape--down, .ld-tape--up {
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18), rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.22)),
+    repeating-linear-gradient(45deg, #f2c318 0 var(--band), #c62a1f var(--band) calc(var(--band) * 2));
+}
+.ld-tape--down { clip-path: inset(0 0 100% 0); animation-name: ld-unroll-down; }
+.ld-tape--up { clip-path: inset(100% 0 0 0); animation-name: ld-unroll-up; }
+@keyframes ld-unroll-right {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes ld-unroll-left {
+  from { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes ld-unroll-down {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes ld-unroll-up {
+  from { clip-path: inset(100% 0 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* The chalk outline; each version sizes and places the svg. */
+.ld-outline { display: block; overflow: visible; color: #f4f4f0; }
+.ld-chalk { opacity: 0.6; }
+.ld-blood { fill: #8a1a14; opacity: 0.85; }
+
+.ld-title {
+  font-family: var(--display); font-weight: 400; line-height: 0.98; text-transform: uppercase; text-align: center;
+  color: var(--room-text); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+}
+.ld-main {
+  position: relative; flex: none; display: flex; flex-direction: column; gap: 14px; padding: 4px 28px calc(26px + var(--safe-bottom));
+}
+.ld-lead { font-size: 15px; line-height: 1.45; text-align: center; text-wrap: balance; color: var(--room-sub); }
+.ld-fine { font-family: var(--mono); font-size: 11px; line-height: 1.5; text-align: center; text-wrap: balance; color: var(--room-faint); }
+
+/* The way in: a manila case file, tab on top. */
+.ld-file {
+  all: unset; box-sizing: border-box; display: flex; flex-direction: column; align-items: flex-start; width: 100%; cursor: pointer;
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.5)); -webkit-user-select: none; user-select: none;
+}
+.ld-file__tab {
+  margin-left: 14px; padding: 5px 14px 4px; border-radius: 7px 7px 0 0; background: var(--manila-tab);
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--manila-ink);
+}
+.ld-file__body {
+  align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 56px; padding: 10px 16px;
+  border-radius: 0 4px 4px 4px; background-color: var(--manila);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.06));
+  box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.06);
+  font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--manila-ink);
+}
+.ld-file__g { display: flex; flex: none; padding: 3px; border-radius: 50%; background: #fff; }
+.ld-file:active { transform: translateY(2px); filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.5)); }
+.ld-file:active .ld-file__body { background-color: #dcc28a; }
+.ld-file:focus-visible { outline: 3px solid var(--room-text); outline-offset: 3px; }
+
+/* ---------- 1. Crossed tape ---------- */
+.ld-x__head { flex: none; padding: calc(var(--safe-top) + 50px) 24px 0; }
+.ld-x__title { font-size: clamp(40px, 12.5vw, 56px); }
+/* The X crosses at the middle of this box, which is the middle of the outline. */
+.ld-x__scene { position: relative; flex: 1 1 auto; min-height: 240px; margin: 10px 0; }
+.ld-x__scene .ld-outline { position: absolute; top: 0; left: 7%; width: 86%; height: 100%; }
+.ld-x__tape { --band: 20px; position: absolute; top: calc(50% - 20px); left: -30%; width: 160%; height: 40px; animation-duration: 0.7s; }
+.ld-x__tape--a { transform: rotate(33deg); animation-delay: 0.4s; }
+.ld-x__tape--b { transform: rotate(-33deg); animation-delay: 0.85s; }
+/* On a short screen the box is shallower, so a flatter X keeps the tape off the title and the lead. */
+@media (max-height: 700px) {
+  .ld-x__tape--a { transform: rotate(28deg); }
+  .ld-x__tape--b { transform: rotate(-28deg); }
+}
+.ld-x__main { gap: 16px; }
+.ld-x__main .ld-lead { max-width: 300px; margin: 0 auto; font-size: 16px; }
+.ld-file--big .ld-file__tab { margin-left: 16px; padding: 6px 16px 5px; font-size: 11px; letter-spacing: 2.4px; }
+.ld-file--big .ld-file__body { min-height: 72px; gap: 12px; font-size: 15px; letter-spacing: 1.8px; }
+
+/* ---------- 2. Taped off ---------- */
+/* Floorboards seen from above: seams between the boards, each board a slightly different tone, a faint grain, board
+   ends staggered (two layers of short dark lines, offset), a dim pool of light in the middle and dark corners. */
+.ld--floor {
+  background-color: #2a1d14;
+  background-image:
+    radial-gradient(60% 42% at 50% 46%, rgba(255, 226, 180, 0.06), rgba(255, 226, 180, 0) 100%),
+    radial-gradient(130% 85% at 50% 48%, rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.74) 100%),
+    conic-gradient(at 62px 2px, rgba(0, 0, 0, 0) 75%, rgba(0, 0, 0, 0.5) 0),
+    conic-gradient(at 62px 2px, rgba(0, 0, 0, 0) 75%, rgba(0, 0, 0, 0.5) 0),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0 2px, rgba(0, 0, 0, 0) 2px 62px),
+    repeating-linear-gradient(90deg, rgba(255, 220, 170, 0.035) 0 62px, rgba(0, 0, 0, 0.12) 62px 124px, rgba(255, 220, 170, 0.07) 124px 186px,
+      rgba(0, 0, 0, 0.04) 186px 248px, rgba(255, 220, 170, 0.02) 248px 310px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 9px, rgba(0, 0, 0, 0.08) 9px 10px, rgba(0, 0, 0, 0) 10px 23px,
+      rgba(255, 255, 255, 0.03) 23px 24px, rgba(0, 0, 0, 0) 24px 37px);
+  background-size: auto, auto, 124px 420px, 124px 420px, auto, auto, auto;
+  background-position: 0 0, 0 0, 0 140px, 62px 350px, 0 0, 0 0, 0 0;
+}
+/* Lying flat, the tape throws its shadow down onto the boards. */
+.ld-tapes--floor { filter: drop-shadow(1px 3px 2px rgba(0, 0, 0, 0.55)); }
+/* Round the edges in turn: top left to right, right side down, bottom right to left, left side up. The ends run past
+   one another at the corners, as tape does. The top one sits below the two pills. */
+.ld-off__edge { --band: 13px; position: absolute; }
+.ld-off__edge--top {
+  top: calc(var(--safe-top) + 44px); left: -14px; right: -14px; height: 24px; transform: rotate(-0.8deg);
+  animation-duration: 0.5s; animation-delay: 0.3s;
+}
+.ld-off__edge--right {
+  top: calc(var(--safe-top) + 36px); bottom: -14px; right: 12px; width: 24px; height: auto; transform: rotate(0.6deg);
+  animation-duration: 0.75s; animation-delay: 0.7s;
+}
+.ld-off__edge--bottom {
+  bottom: calc(var(--safe-bottom) + 12px); left: -14px; right: -14px; height: 24px; transform: rotate(0.7deg);
+  animation-duration: 0.5s; animation-delay: 1.35s;
+}
+.ld-off__edge--left {
+  top: calc(var(--safe-top) + 36px); bottom: -14px; left: 12px; width: 24px; height: auto; transform: rotate(-0.5deg);
+  animation-duration: 0.75s; animation-delay: 1.75s;
+}
+/* Everything else stays inside the frame. */
+.ld-off__inside {
+  position: relative; flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: calc(var(--safe-top) + 84px) 46px calc(var(--safe-bottom) + 54px);
+}
+/* The title on a felt letterboard put down on the floor. */
+.ld-board {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 18px 11px; transform: rotate(-1.5deg);
+  background-color: var(--felt);
+  background-image: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 5px);
+  border: 5px solid #2b2620; border-radius: 4px;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.5), 0 3px 0 rgba(0, 0, 0, 0.55), inset 0 0 12px rgba(0, 0, 0, 0.6);
+  font-family: var(--mono); font-size: 22px; font-weight: 700; line-height: 1.25; letter-spacing: 6px; text-transform: uppercase;
+  color: var(--felt-text);
+}
+/* Letter-spacing trails after the last letter; pull it back so each line sits in the middle. */
+.ld-board span { margin-right: -6px; }
+/* On a tall screen, once it is as big as it gets, the spare room goes evenly above and below it. */
+.ld-off__scene { position: relative; align-self: stretch; flex: 1 1 auto; min-height: 170px; max-height: 380px; margin: auto 0; }
+.ld-off__scene .ld-outline { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ld--floor .ld-lead { color: #cdc6b4; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.ld--floor .ld-fine { color: #a29c8d; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); }
+/* Dropped on the floor: turned a little, with a soft shadow under it that tightens when it is pressed. */
+.ld-file--floor { transform: rotate(-2.5deg); filter: drop-shadow(0 14px 12px rgba(0, 0, 0, 0.55)) drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45)); }
+.ld-file--floor:active {
+  transform: rotate(-2.5deg) translateY(2px); filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.55)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+.ld-file--floor .ld-file__body { letter-spacing: 1.2px; }
+/* Evidence markers: yellow tent cards, popping up one by one while the tape goes round. */
+.ld-marker { transform-box: fill-box; transform-origin: 50% 100%; animation: ld-pop 0.35s cubic-bezier(0.3, 1.5, 0.5, 1) both; }
+.ld-marker__shadow { fill: rgba(0, 0, 0, 0.45); }
+.ld-marker__back { fill: #b08a0e; }
+.ld-marker__face { fill: #f2c318; }
+.ld-marker text { font-family: var(--mono); font-size: 12px; font-weight: 700; fill: #15130f; }
+@keyframes ld-pop {
+  from { opacity: 0; transform: scale(0.2); }
+}
+
+/* ---------- 3. Big type ---------- */
+/* The title is as big as "MYSTERY" can be and still fit (5.3em wide in Archivo Black); the tapes are placed in em so
+   they keep to the same letters at any width. */
+.ld-type__head { flex: none; padding: calc(var(--safe-top) + 74px) 22px 0; }
+.ld-type__block { position: relative; font-size: calc((min(100vw, 480px) - 44px) / 5.3); }
+.ld-type__title {
+  font-family: var(--display); font-size: 1em; font-weight: 400; line-height: 0.88; letter-spacing: -0.02em; text-transform: uppercase;
+  color: var(--room-text); text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+}
+.ld-type__thin {
+  --band: 11px; position: absolute; top: calc(var(--safe-top) + 40px); left: -10%; width: 120%; height: 16px; transform: rotate(-2.5deg);
+  animation-delay: 0.35s;
+}
+/* Over the foot of PUB (and the top of CRAWL's first letters) on the left, rising clear of MYSTERY on the right. The
+   second term lifts it by how much the slope raises its left end, so the left end lands at 1.58em at any width. */
+.ld-type__slash {
+  --band: 14px; position: absolute; top: calc(1.7em - (min(100vw, 480px) - 44px) * 0.0437); left: -40px; right: -40px; height: 28px;
+  transform: rotate(-5deg); animation-delay: 0.7s;
+}
+.ld-type__mid {
+  position: relative; flex: 1 1 auto; display: flex; flex-direction: column; justify-content: flex-end; min-height: 200px; padding: 0 22px;
+}
+/* Low, behind the outline's legs, and clear above the lead on the left. */
+.ld-type__low { position: absolute; bottom: 72px; left: -10%; width: 120%; height: 26px; transform: rotate(7deg); animation-delay: 1.05s; }
+/* The box takes the drawing's own shape and is pushed a quarter of its width off the right edge, at any size. */
+.ld-type__scene {
+  position: absolute; right: 0; bottom: 6px; height: min(100% - 14px, 300px); aspect-ratio: 268 / 302; transform: translateX(26%);
+}
+.ld-type__scene .ld-outline { width: 100%; height: 100%; }
+.ld-type__lead { position: relative; max-width: 13.5em; text-align: left; text-wrap: wrap; }
+.ld-type__main { align-items: flex-start; padding: 18px 22px calc(26px + var(--safe-bottom)); }
+.ld-type__main .ld-fine { max-width: 78%; text-align: left; text-wrap: wrap; }
+.ld-file--narrow { width: 78%; transform: rotate(-1.5deg); transform-origin: 0 50%; }
+.ld-file--narrow:active { transform: rotate(-1.5deg) translateY(2px); }
+.ld-file--narrow .ld-file__body { padding: 10px 12px; letter-spacing: 1.2px; }
+
+/* ---------- 4. Barrier ---------- */
+/* The outline drawn huge on the floor behind it all, barely there. */
+.ld-bar__ghost { position: absolute; z-index: -1; top: 3%; bottom: 3%; left: -24%; right: -24%; pointer-events: none; }
+.ld-bar__ghost .ld-outline { width: 100%; height: 100%; }
+.ld-bar__ghost .ld-chalk { opacity: 0.12; stroke-width: 3.2; }
+.ld-bar__ghost .ld-blood { opacity: 0.3; }
+/* The barrier sits a little above the middle; the space above takes most of what is left. */
+.ld-bar__space { flex: 0.6 1 0; min-height: calc(var(--safe-bottom) + 24px); }
+.ld-bar__space--top { flex: 1.6 1 0; min-height: calc(var(--safe-top) + 46px); }
+.ld-bar__band { position: relative; flex: none; margin: 0 -14%; transform: rotate(-3deg); filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.35)); }
+.ld-bar__tape { animation-delay: 0.35s; }
+.ld-bar__tape:last-child { animation-delay: 0.75s; }
+.ld-bar__strip {
+  padding: 16px 0 15px; background: linear-gradient(180deg, #08090a, #030304);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+.ld-bar__title { font-size: clamp(40px, 12.5vw, 54px); text-shadow: none; }
+.ld-bar__main { align-items: center; padding: 30px 28px 0; }
+.ld-bar__main .ld-lead { max-width: 300px; }
+.ld-file--small { width: 250px; max-width: 100%; align-items: center; }
+.ld-file--small .ld-file__tab { margin-left: 0; }
+.ld-file--small .ld-file__body { min-height: 52px; padding: 10px 12px; border-radius: 4px; letter-spacing: 1.2px; }
+
+/* ---------- 5. Exhibit ---------- */
+.ld-ex__cordon { position: relative; inset: auto; flex: none; height: 72px; margin-top: calc(var(--safe-top) + 40px); }
+.ld-ex__tape { position: absolute; top: 4px; left: -20%; width: 140%; transform: rotate(-4deg); animation-delay: 0.35s; }
+.ld-ex__tape--thin { top: 42px; height: 20px; transform: rotate(3deg); animation-delay: 0.6s; }
+.ld-ex__head { flex: none; margin-top: 6px; padding: 0 24px; }
+.ld-ex__title { font-size: clamp(32px, 9.4vw, 40px); }
+/* The photo is as tall as the stage allows (less room above for the tape on its corners), no wider than the screen
+   minus a margin, and shaped like an instant photo. */
+.ld-ex__stage { position: relative; flex: 1 1 auto; min-height: 200px; }
+.ld-photo {
+  position: absolute; left: 50%; top: calc(50% + 13px); display: flex; flex-direction: column;
+  height: min(100% - 56px, 410px, (min(100vw, 480px) - 116px) / 0.8); aspect-ratio: 0.8; padding: 11px 11px 0;
+  border-radius: 2px; background: linear-gradient(180deg, #f6f3ec, #e8e4d8);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 18px 34px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%) rotate(3deg); animation: ld-photo-in 0.5s 0.1s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes ld-photo-in {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(8deg) scale(1.06); }
+}
+/* The flash photo: dark boards, bright in the middle and falling off to the edges, with a little gloss. */
+.ld-photo__shot {
+  position: relative; flex: 1 1 auto; overflow: hidden;
+  background-color: #241a12;
+  background-image:
+    radial-gradient(70% 55% at 46% 42%, rgba(255, 244, 220, 0.16), rgba(255, 244, 220, 0) 70%),
+    radial-gradient(120% 95% at 50% 45%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.7) 100%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0 1px, rgba(0, 0, 0, 0) 1px 30px),
+    repeating-linear-gradient(90deg, rgba(255, 220, 170, 0.04) 0 30px, rgba(0, 0, 0, 0.1) 30px 60px, rgba(255, 220, 170, 0.08) 60px 90px);
+}
+.ld-photo__shot::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 38%); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.ld-photo__shot .ld-outline { position: absolute; top: 6%; left: 6%; width: 88%; height: 88%; }
+.ld-photo__shot .ld-chalk { opacity: 0.78; }
+.ld-photo__shot .ld-blood { fill: #721710; }
+/* The blank strip at the bottom of an instant photo. */
+.ld-photo__caption { flex: 0 0 19%; }
+/* Short bits of the tape across the two top corners, holding it to the wall; each is centred just in from its corner. */
+.ld-photo__stick {
+  --w: clamp(60px, 31%, 92px);
+  position: absolute; top: -5px; width: var(--w); height: 22px; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+}
+.ld-photo__stick .ld-tape { --band: 9px; height: 100%; }
+.ld-photo__stick--l { left: calc(6px - var(--w) / 2); transform: rotate(-45deg); }
+.ld-photo__stick--r { right: calc(6px - var(--w) / 2); transform: rotate(45deg); }
+.ld-photo__stick--l .ld-tape { animation-delay: 0.95s; }
+.ld-photo__stick--r .ld-tape { animation-delay: 1.15s; }
+@media (max-height: 700px) {
+  .ld-ex__cordon { height: 62px; margin-top: calc(var(--safe-top) + 38px); }
+  .ld-ex__tape--thin { top: 36px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ld-siren::before, .ld-siren::after { animation: none; opacity: 0.6; }
+  /* No waiting for tape that won't be seen moving. */
+  .ld-tape, .ld-marker, .ld-photo { animation-delay: 0s !important; }
+}

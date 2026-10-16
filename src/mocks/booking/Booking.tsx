@@ -4,17 +4,20 @@
 // on one screen: their particulars on a manila booking sheet, a typed letter from the police thanking them and warning that their
 // prints come next, their right thumb on a livescan machine (press and hold; nothing is read, it only looks the part),
 // then the file with the inked print and a mugshot to come: the photographer's room, a countdown, the flash, and the
-// phone's own camera for the photo, which goes into the file before it's stamped BOOKED and left on the GM's desk.
+// phone's own camera for the photo, which goes into the file before it's stamped BOOKED. Last, the detective's calling
+// card with the police's number to save (they'll ring the suspicious), and the file is left on the GM's desk.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import '../../themes/mystery.css';
 import './booking.css';
 import { FINGER, PRINT_H, PRINT_W, hashText, makePrint, type Print } from './fingerprint';
+import { CallingCard } from '../phone/SaveNumber';
+import { HoneycombStamp, PoliceBadge } from '../stamp/stamps';
 import { buzz, lessMotion } from './feel';
 import { GoogleMark } from './google';
 import { PhotoRoom } from './PhotoRoom';
 import { SignIn } from './SignIn';
 
-type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked' | 'photo';
+type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked' | 'photo' | 'number';
 
 interface Particulars {
   name: string;
@@ -52,6 +55,8 @@ export default function Booking() {
   const print = useMemo(() => makePrint(`${who.name}|${who.alias}`), [who.name, who.alias]);
   /** Their mugshot, as a local object URL; it never leaves the phone. */
   const [photo, setPhoto] = useState<string | null>(null);
+  /** Whether they've been through the calling card (saved or copied the police's number). */
+  const [numberSaved, setNumberSaved] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -61,6 +66,7 @@ export default function Booking() {
     setWho({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
     if (photo) URL.revokeObjectURL(photo);
     setPhoto(null);
+    setNumberSaved(false);
     setStep('signin');
   };
 
@@ -71,6 +77,17 @@ export default function Booking() {
       <div className="bk bk--scene">
         <InterviewRoom onDone={() => setStep('particulars')} />
       </div>
+    );
+  }
+
+  if (step === 'number') {
+    return (
+      <CallingCard
+        onDone={() => {
+          setNumberSaved(true);
+          setStep('booked');
+        }}
+      />
     );
   }
 
@@ -92,7 +109,7 @@ export default function Booking() {
     <div className="bk">
       <div className="bk__beam" aria-hidden="true" />
       <header className="bk-board">
-        <span className="bk-board__line">Blackwood Manor PD</span>
+        <span className="bk-board__line">Manchester Metropolitan Police</span>
         <span className="bk-board__title">Booking desk</span>
       </header>
       <div className="bk-who">
@@ -113,7 +130,15 @@ export default function Booking() {
         ) : step === 'prints' ? (
           <Livescan print={print} onDone={() => setStep('booked')} onBack={() => setStep('particulars')} />
         ) : (
-          <BookedFile who={who} print={print} photo={photo} onPhoto={() => setStep('photo')} onAgain={startOver} />
+          <BookedFile
+            who={who}
+            print={print}
+            photo={photo}
+            numberSaved={numberSaved}
+            onPhoto={() => setStep('photo')}
+            onNumber={() => setStep('number')}
+            onAgain={startOver}
+          />
         )}
       </div>
     </div>
@@ -662,15 +687,15 @@ function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onB
           <article className={`bk-letter${signed ? ' is-signed' : ''}`} onClick={() => setTyped(total)}>
             <Paperclip className="bk-clip--letter" />
             <header className="bk-letter__head">
-              <Crest />
+              <PoliceBadge className="bk-letter__crest" />
               <div className="bk-letter__org">
-                <strong>Blackwood Manor Police</strong>
+                <strong>Manchester Metropolitan Police</strong>
                 <span>Criminal Investigation Dept.</span>
               </div>
             </header>
             <dl className="bk-letter__meta">
               <dt>Ref</dt>
-              <dd>BM/CID/{sheetNumber(who.name || GOOGLE_NAME)}</dd>
+              <dd>MMP/CID/{sheetNumber(who.name || GOOGLE_NAME)}</dd>
               <dt>Date</dt>
               <dd>{today}</dd>
               <dt>Re</dt>
@@ -699,8 +724,12 @@ function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onB
                   d="M4 32C12 10 20 4 22 14S16 38 26 30 36 10 40 18 38 34 48 26 58 12 62 20 60 32 70 26 80 14 86 18 84 30 94 26 104 18 110 22M30 38C56 34 90 34 126 30"
                 />
               </svg>
-              <span className="bk-letter__who">Desk Sergeant, Blackwood Manor PD</span>
-              <Seal />
+              <span className="bk-letter__who">
+                Desk Sergeant
+                <br />
+                Manchester Metropolitan Police
+              </span>
+              <HoneycombStamp className="bk-seal" />
             </footer>
           </article>
           <button type="button" className="bk-go" onClick={onDone}>
@@ -712,37 +741,6 @@ function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onB
         ← Back to particulars
       </button>
     </>
-  );
-}
-
-/** The force's shield, for the letterhead. */
-function Crest() {
-  return (
-    <svg className="bk-letter__crest" viewBox="0 0 30 34" aria-hidden="true">
-      <path d="M15 1.5 28 6v10.5C28 24.5 22.5 30 15 32.5 7.5 30 2 24.5 2 16.5V6z" fill="none" stroke="currentColor" strokeWidth="2" />
-      <path d="M15 4.8 25 8.3v8.2C25 22.6 20.8 27 15 29.2 9.2 27 5 22.6 5 16.5V8.3z" fill="currentColor" opacity="0.12" />
-      <polygon points="15,9 16.9,14.4 22.6,14.6 18.1,18 19.7,23.5 15,20.3 10.3,23.5 11.9,18 7.4,14.6 13.1,14.4" fill="currentColor" />
-    </svg>
-  );
-}
-
-/** A round inked seal with the force's name running round the rim. */
-function Seal() {
-  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  return (
-    <svg className="bk-seal" viewBox="0 0 100 100" aria-hidden="true">
-      <defs>
-        <path id={`s${uid}`} d="M50 50m-36 0a36 36 0 1 1 72 0a36 36 0 1 1-72 0" />
-      </defs>
-      <circle cx="50" cy="50" r="47" />
-      <circle cx="50" cy="50" r="26" className="bk-seal__thin" />
-      <text>
-        <textPath href={`#s${uid}`} textLength="224" lengthAdjust="spacing">
-          BLACKWOOD MANOR PD ★ C.I.D. ★
-        </textPath>
-      </text>
-      <polygon points="50,36 53.5,45.1 63.3,45.7 55.7,51.9 58.2,61.3 50,56 41.8,61.3 44.3,51.9 36.7,45.7 46.5,45.1" />
-    </svg>
   );
 }
 
@@ -798,7 +796,7 @@ function PrintArt({ print, tone, reveal = 1, className }: { print: Print; tone: 
 /* ---------------------------------------------------------------- 2 · prints */
 
 const HOLD_MS = 2800;
-const SEARCH_LINES = ['Searching county records', 'Cross-checking Blackwood Manor', 'Checking the bar tabs', 'Asking the barmaid'];
+const SEARCH_LINES = ['Searching county records', 'Cross-checking Manchester records', 'Checking the bar tabs', 'Asking the barmaid'];
 
 type ScanPhase = 'idle' | 'reading' | 'lifted' | 'searching' | 'done';
 
@@ -996,7 +994,7 @@ function Records({ seed }: { seed: number }) {
   }, []);
   const lines = Array.from({ length: 6 }, (_, i) => {
     const h = hashText(`${seed}:${tick}:${i}`);
-    return `BM-${pad(h % 10_000, 4)}  ${pad((h >>> 8) % 100, 2)}/${pad((h >>> 16) % 100, 2)}  ${h % 3 === 0 ? 'NO MATCH' : '····'}`;
+    return `MMP-${pad(h % 10_000, 4)}  ${pad((h >>> 8) % 100, 2)}/${pad((h >>> 16) % 100, 2)}  ${h % 3 === 0 ? 'NO MATCH' : '····'}`;
   });
   return (
     <div className="bk-records" aria-hidden="true">
@@ -1010,26 +1008,54 @@ function Records({ seed }: { seed: number }) {
 /* ---------------------------------------------------------------- 3 · booked */
 
 /**
- * The file. First with the print in and the photo still to come, and a Next to the photographer; back from there, the
- * photo is pasted in, the file stamped BOOKED and left on the GM's desk.
+ * The file, three times over. First with the print in and the photo still to come, and a Next to the photographer;
+ * back from there, the photo pasted in and the file stamped BOOKED, and a Next to the police's number; back from that,
+ * settled (no more slamming) and left on the GM's desk.
  */
-function BookedFile({ who, print, photo, onPhoto, onAgain }: { who: Particulars; print: Print; photo: string | null; onPhoto(): void; onAgain(): void }) {
+function BookedFile({
+  who,
+  print,
+  photo,
+  numberSaved,
+  onPhoto,
+  onNumber,
+  onAgain,
+}: {
+  who: Particulars;
+  print: Print;
+  photo: string | null;
+  numberSaved: boolean;
+  onPhoto(): void;
+  onNumber(): void;
+  onAgain(): void;
+}) {
   useEffect(() => {
-    if (!photo) return;
+    if (!photo || numberSaved) return;
     const id = window.setTimeout(() => buzz(35), 1150);
     return () => window.clearTimeout(id);
-  }, [photo]);
+  }, [photo, numberSaved]);
   const number = caseNumber(who.name);
   return (
     <>
-      <article className={`bk-folder bk-file${photo ? ' has-photo' : ''}`}>
+      <article className={`bk-folder bk-file${photo ? ' has-photo' : ''}${numberSaved ? ' is-settled' : ''}`}>
         <span className="bk-folder__tab">
           Case {number}
           <Paperclip className="bk-clip--tab" />
         </span>
         <div className="bk-folder__body">
           <div className="bk-file__top">
-            <Mugshot heightCm={who.heightCm} alias={who.alias} number={number} photo={photo} />
+            {photo ? (
+              <Mugshot alias={who.alias} number={number} photo={photo} />
+            ) : (
+              <button type="button" className="bk-mug-slot" onClick={onPhoto}>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="2.5" y="5" width="15" height="15" rx="1.5" />
+                  <circle cx="7.4" cy="10" r="1.6" />
+                  <path d="M3 18l4.4-4.4 3.4 3.4 2.6-2.6 4.1 4.1M20 2v6M17 5h6" />
+                </svg>
+                Insert photo
+              </button>
+            )}
             <dl className="bk-facts">
               <Fact label="Name">{who.name}</Fact>
               <Fact label="Goes by">{who.alias}</Fact>
@@ -1067,7 +1093,16 @@ function BookedFile({ who, print, photo, onPhoto, onAgain }: { who: Particulars;
           ) : null}
         </div>
       </article>
-      {photo ? (
+      {photo && !numberSaved ? (
+        <>
+          <p className="bk-lead">Booked. One last thing before we let you go: our number.</p>
+          <div className="bk-next">
+            <button type="button" className="bk-go" onClick={onNumber}>
+              Next <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </>
+      ) : photo ? (
         <>
           <p className="bk-lead">Your file is on the GM’s desk. You’ll be let into the game once they’ve had a look.</p>
           <div className="bk-wait" role="status">
@@ -1101,16 +1136,11 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/**
- * Against a height chart, holding a placard: their photo once it's taken (in old black and white), or until then a
- * silhouette standing as tall as they said.
- */
-function Mugshot({ heightCm, alias, number, photo }: { heightCm: number; alias: string; number: string; photo: string | null }) {
-  // The chart runs 140–210 cm over the panel; the head's top sits at their height.
-  const top = ((210 - heightCm) / 70) * 100;
+/** Their photo against a height chart (in old black and white), holding a placard with their alias and case number. */
+function Mugshot({ alias, number, photo }: { alias: string; number: string; photo: string }) {
   return (
-    <div className={`bk-mug${photo ? ' has-photo' : ''}`} aria-label={photo ? 'Your mugshot' : `Mugshot placeholder, ${heightCm} cm`} role="img">
-      {photo ? <img className="bk-mug__photo" src={photo} alt="" /> : null}
+    <div className="bk-mug" aria-label="Your mugshot" role="img">
+      <img className="bk-mug__photo" src={photo} alt="" />
       <div className="bk-mug__chart" aria-hidden="true">
         {[200, 190, 180, 170, 160, 150].map((cm) => (
           <span key={cm} style={{ top: `${((210 - cm) / 70) * 100}%` }}>
@@ -1118,12 +1148,6 @@ function Mugshot({ heightCm, alias, number, photo }: { heightCm: number; alias: 
           </span>
         ))}
       </div>
-      {photo ? null : (
-        <svg className="bk-mug__who" viewBox="0 0 100 120" preserveAspectRatio="xMidYMin meet" style={{ top: `${top}%` }} aria-hidden="true">
-          <circle cx="50" cy="28" r="20" />
-          <path d="M12 120 C12 78 28 58 50 58 C72 58 88 78 88 120 Z" />
-        </svg>
-      )}
       <div className="bk-mug__placard" aria-hidden="true">
         <span>{alias || 'Unknown'}</span>
         <span>{number}</span>

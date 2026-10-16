@@ -1,7 +1,7 @@
 // The sign-in screen, from the game's (Quest-Game src/packs/mystery/screens/SignIn.tsx) and moved on: police tape that
 // stretches across the screen as it opens, a sprawled chalk outline with a little blood, and a police car's red and
-// blue going off and on from the left. The way in is the same little case file; then a stand-in for Google's account
-// picker. Nothing is signed in: picking the account just moves the mock on.
+// blue going off and on from the left. The way in is a manila file standing up from the bottom of the screen, the sign-in
+// typed on its label; then a stand-in for Google's account picker. Nothing is signed in: picking the account just moves the mock on.
 import { useEffect, useRef, useState } from 'react';
 import { GoogleMark } from './google';
 import './signin.css';
@@ -45,14 +45,14 @@ export function SignIn({ name, email, onDone }: { name: string; email: string; o
           <span className="si-file__tab" aria-hidden="true">
             Your file
           </span>
-          <span className="si-file__body">
-            <span className="si-file__g">
-              <GoogleMark size={18} />
+          <span className="si-file__back">
+            <span className="si-file__papers" aria-hidden="true" />
+            <span className="si-file__front">
+              <span className="si-file__label">Sign in with Google</span>
+              <span className="si-file__fine">We only use your name and photo. The GM approves everyone before they join.</span>
             </span>
-            <span>Sign in with Google</span>
           </span>
         </button>
-        <p className="si__fine">We only use your name and photo. The GM approves everyone before they join.</p>
       </main>
       {picker === 'closed' ? null : (
         <AccountPicker name={name} email={email} signing={picker === 'signing'} onPick={() => setPicker('signing')} onClose={() => setPicker('closed')} />

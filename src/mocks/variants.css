@@ -1,0 +1,11 @@
+/* The version switcher: like the ‹ Mocks pill, top left, out of the way and half see-through. */
+.mk-switch {
+  position: fixed; z-index: 1000; top: calc(var(--safe-top) + 6px); left: 6px; display: flex; align-items: center; gap: 2px; padding: 0 2px;
+  border-radius: 999px; background: rgba(0, 0, 0, 0.5); color: rgba(255, 255, 255, 0.82);
+  font: 600 11px/1.2 system-ui, sans-serif; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.mk-switch span { padding: 0 2px; white-space: nowrap; }
+.mk-switch button {
+  display: grid; place-items: center; width: 30px; height: 26px; padding: 0; border: 0; background: none; color: inherit;
+  font-size: 18px; line-height: 1; cursor: pointer;
+}

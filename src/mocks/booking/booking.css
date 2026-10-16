@@ -23,6 +23,105 @@
   to { transform: translate(12px, 12px) rotate(1.5deg); }
 }
 
+/* ---------- 0 · the interview room: a desk in the dark, a man behind it, and a lamp that turns on you ---------- */
+.bk--scene { padding: 0; }
+.bk-int { position: relative; height: 100dvh; min-height: 520px; overflow: hidden; background: #040405; user-select: none; -webkit-user-select: none; }
+/* The stage covers the screen at the scene's own shape (390 × 844), cropping the sides or the top and bottom to fit. */
+.bk-int__stage {
+  position: absolute; left: 50%; top: 50%; width: max(100%, calc(100dvh * 390 / 844)); aspect-ratio: 390 / 844;
+  transform: translate(-50%, -50%); container-type: inline-size; animation: bk-int-in 1s ease-out both;
+}
+@keyframes bk-int-in { from { opacity: 0; } }
+.bk-int__layer { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.bk-int__layer text { font-family: var(--mono); font-weight: 700; }
+/* The desk tips back from its front edge; 230.77cqw is 900 of the scene's units, so the tilt looks the same at any size. */
+.bk-int__desk { transform-origin: 50% 100%; transform: perspective(230.77cqw) rotateX(38deg); }
+.bk-int__seams { fill: none; stroke: rgba(0, 0, 0, 0.3); stroke-width: 1.5; }
+
+.bk-int__man { fill: #0d0e0f; }
+.bk-int__collar { fill: #16181a; }
+.bk-int__specs rect { fill: #050505; stroke: #1c1f22; stroke-width: 2; }
+.bk-int__temples { fill: none; stroke: #1c1f22; stroke-width: 2.5; stroke-linecap: round; }
+.bk-int__sheen { fill: none; stroke: rgba(255, 255, 255, 0.08); stroke-width: 2; stroke-linecap: round; }
+/* He's gone once the light's in your eyes. */
+.bk-int__him { transition: opacity 0.35s ease-out 0.3s; }
+.bk-int.is-turned .bk-int__him { opacity: 0; }
+.bk-int__cig { fill: none; stroke: #3a3d40; stroke-width: 3.6; }
+.bk-int__ash { fill: none; stroke: #55585a; stroke-width: 3.6; }
+.bk-int__grain { fill: none; stroke: rgba(0, 0, 0, 0.28); stroke-width: 1.2; }
+
+/* Lights out, until the lamp flickers on over the files. */
+.bk-int__pool, .bk-int__beam, .bk-int__mouth { opacity: 0; }
+.bk-int.is-lit .bk-int__pool, .bk-int.is-lit .bk-int__beam, .bk-int.is-lit .bk-int__mouth { animation: bk-int-on 0.55s steps(1, end) forwards; }
+@keyframes bk-int-on {
+  0% { opacity: 0.7; }
+  15% { opacity: 0; }
+  30% { opacity: 1; }
+  45% { opacity: 0.25; }
+  60%, 100% { opacity: 1; }
+}
+.bk-int__dark { opacity: 0.9; }
+.bk-int.is-turned .bk-int__beam { animation: bk-int-off 0.25s ease-out forwards; }
+@keyframes bk-int-off { from { opacity: 1; } to { opacity: 0; } }
+
+/* The shade swings up at you, foreshortening to nothing as the lit face of the lamp takes its place. */
+.bk-int__shade { transform-origin: 104px 560px; transform: rotate(-65deg); }
+.bk-int.is-turned .bk-int__shade { animation: bk-int-turn 0.6s cubic-bezier(0.5, 0, 0.3, 1) forwards; }
+@keyframes bk-int-turn {
+  0% { transform: rotate(-65deg); opacity: 1; }
+  55% { transform: rotate(-18deg) scaleY(0.6); opacity: 1; }
+  100% { transform: rotate(0deg) scaleY(0.1); opacity: 0; }
+}
+.bk-int__face { transform-origin: 104px 560px; transform: scale(0.3, 0.8); opacity: 0; }
+.bk-int.is-turned .bk-int__face { animation: bk-int-face 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.3s forwards; }
+@keyframes bk-int-face { to { transform: none; opacity: 1; } }
+.bk-int__glare { opacity: 0; }
+.bk-int.is-turned .bk-int__glare { animation: bk-int-glare 0.6s ease-out 0.4s forwards; }
+@keyframes bk-int-glare { to { opacity: 1; } }
+.bk-int__flare { transform-origin: 104px 560px; transform: scale(0.2); }
+.bk-int.is-turned .bk-int__flare { animation: bk-int-flare 0.9s ease-out 0.4s forwards; }
+@keyframes bk-int-flare {
+  55% { transform: scale(1.08); }
+  100% { transform: none; }
+}
+
+
+/* He smokes. */
+.bk-int__ember { animation: bk-int-ember 3.4s ease-in-out infinite; }
+@keyframes bk-int-ember {
+  0%, 100% { opacity: 0.6; }
+  40% { opacity: 1; }
+  55% { opacity: 0.75; }
+}
+.bk-int__smoke path {
+  fill: none; stroke: rgba(196, 190, 178, 0.5); stroke-width: 3; stroke-linecap: round; opacity: 0;
+  transform-box: fill-box; transform-origin: 50% 100%; animation: bk-int-smoke 5.4s ease-out infinite;
+}
+.bk-int__smoke path:nth-child(2) { animation-delay: 1.8s; }
+.bk-int__smoke path:nth-child(3) { animation-delay: 3.6s; }
+@keyframes bk-int-smoke {
+  0% { opacity: 0; transform: translate(0, 10px) scale(0.6); }
+  20% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-14px, -70px) scale(1.4); }
+}
+
+.bk-int__rec {
+  position: absolute; left: 16px; top: calc(var(--safe-top) + 12px); display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--room-faint);
+  transition: color 0.4s ease-out 0.5s;
+}
+.bk-int__rec::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #ff5e4d; box-shadow: 0 0 6px #ff5e4d; animation: bk-blink 1s steps(2) infinite; }
+.bk-int.is-turned .bk-int__rec { color: var(--manila-sub); }
+
+.bk-int__q {
+  position: absolute; left: 12px; right: 12px; top: 30%; text-align: center;
+  font-family: var(--mono); font-size: clamp(30px, 9.5vw, 40px); font-weight: 400; line-height: 1.2;
+  color: #17130e; text-shadow: 0 0 18px rgba(255, 248, 230, 0.9);
+}
+.bk-int__q .bk-caret { width: 0.6em; margin-right: -0.6em; }
+.bk-go.bk-int__next { position: absolute; left: 20px; right: 20px; bottom: calc(26px + var(--safe-bottom)); width: auto; animation: bk-int-up 0.45s ease-out both; }
+@keyframes bk-int-up { from { opacity: 0; transform: translateY(24px); } }
+
 /* ---------- the desk: letterboard, who you are, the steps ---------- */
 .bk-board {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
@@ -191,11 +290,11 @@
 .bk-letter__meta dt { font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--manila-sub); }
 .bk-letter__meta dd { margin: 0; overflow-wrap: anywhere; }
 .bk-letter__body { display: flex; flex-direction: column; gap: 10px; font-family: var(--mono); font-size: 14px; line-height: 1.55; }
-/* The untyped rest keeps its place, so the lines never jump while the text types out. */
-.bk-letter__rest { visibility: hidden; }
-.bk-letter__caret {
+/* Typed text: the untyped rest keeps its place, so lines never jump while it types out, and a block caret blinks. */
+.bk-rest { visibility: hidden; }
+.bk-caret {
   display: inline-block; width: 0.55em; height: 1.15em; margin-right: -0.55em; vertical-align: -0.2em;
-  background: var(--manila-ink); animation: bk-blink 0.8s steps(2) infinite;
+  background: currentColor; animation: bk-blink 0.8s steps(2) infinite;
 }
 .bk-letter__sign { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-family: var(--mono); font-size: 13px; }
 .bk-letter__sign > span:first-child { opacity: 0; transition: opacity 0.3s; }

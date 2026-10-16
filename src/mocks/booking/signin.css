@@ -1,48 +1,72 @@
 /*
- * The game's sign-in screen (Quest-Game src/packs/mystery/screens/signin.css, copied): a dark room, a torch beam that
- * drifts a little, crime-scene tape across the top and the bottom, the title and a chalk outline in the light, and the
- * way in as a little manila case file with a tab. Then a plain sheet standing in for Google's account picker.
+ * The sign-in screen, from the game's (Quest-Game src/packs/mystery/screens/signin.css) and moved on: a dark room lit
+ * only by a police car's red and blue from the left, red-and-yellow police tape pulled across the top and the bottom as
+ * it opens, the title and a sprawled chalk outline, and the way in as a little manila case file with a tab. Then a
+ * plain sheet standing in for Google's account picker.
  */
 .si {
   position: relative; isolation: isolate; overflow: hidden;
   display: flex; flex-direction: column; width: 100%; max-width: 480px; min-height: 100dvh; margin: 0 auto;
   background: #0d0e0f; color: #efe9d6; font-family: var(--body);
 }
-.si__beam {
-  position: absolute; z-index: -1; left: -20%; right: -20%; top: 6%; height: 80%; pointer-events: none;
-  background: radial-gradient(52% 48% at 50% 50%, rgba(233, 226, 200, 0.3) 0%, rgba(233, 226, 200, 0.16) 38%, rgba(233, 226, 200, 0.04) 62%, transparent 75%);
-  animation: si-torch 9s ease-in-out infinite alternate;
+/* A police car somewhere off to the left: red twice, blue twice, over and over, faint on the walls. */
+.si__siren { position: absolute; z-index: -1; inset: 0; pointer-events: none; }
+.si__siren::before, .si__siren::after {
+  content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0;
+  animation: si-red 1.6s linear infinite;
 }
-@keyframes si-torch {
-  from { transform: translate(-14px, 0) rotate(-1.5deg); }
-  to { transform: translate(14px, 10px) rotate(1.5deg); }
+.si__siren::before { background: radial-gradient(75% 55% at 0% 48%, rgba(226, 38, 38, 0.3), rgba(226, 38, 38, 0.08) 55%, transparent 80%); }
+.si__siren::after { background: radial-gradient(75% 55% at 0% 52%, rgba(46, 96, 238, 0.32), rgba(46, 96, 238, 0.08) 55%, transparent 80%); animation-name: si-blue; }
+@keyframes si-red {
+  0%, 9% { opacity: 1; }
+  12%, 17% { opacity: 0; }
+  20%, 29% { opacity: 1; }
+  32%, 100% { opacity: 0; }
+}
+@keyframes si-blue {
+  0%, 49% { opacity: 0; }
+  50%, 59% { opacity: 1; }
+  62%, 67% { opacity: 0; }
+  70%, 79% { opacity: 1; }
+  82%, 100% { opacity: 0; }
 }
 
 .si__cordon { position: relative; flex: none; height: 84px; pointer-events: none; }
 .si__cordon--top { margin-top: calc(var(--safe-top) + 30px); }
+/* Police tape: red and yellow stripes, a little sheen, wider than the screen. Each is pulled across as the screen
+   opens, one after another, from alternate sides. */
 .si__tape {
-  position: absolute; left: -20%; width: 140%; height: 34px; line-height: 34px; overflow: hidden; white-space: nowrap;
-  background: var(--warn); background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.14));
-  color: var(--paper); font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 3px;
+  position: absolute; left: -20%; width: 140%; height: 30px;
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.18)),
+    repeating-linear-gradient(-45deg, #f2c318 0 15px, #c62a1f 15px 30px);
   box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  clip-path: inset(0 100% 0 0); animation: si-unroll-right 0.55s cubic-bezier(0.3, 0.6, 0.3, 1) forwards;
 }
-.si__tape--thin { height: 26px; line-height: 26px; font-size: 11px; letter-spacing: 2.5px; }
-.si__cordon--top .si__tape { top: 0; transform: rotate(-5deg); }
-.si__cordon--top .si__tape--thin { top: 44px; transform: rotate(3deg); }
-.si__cordon--bottom .si__tape { top: 8px; transform: rotate(4deg); }
-.si__cordon--bottom .si__tape--thin { top: 50px; transform: rotate(-3deg); }
+.si__tape--thin { height: 20px; }
+.si__cordon--top .si__tape { top: 2px; transform: rotate(-5deg); animation-delay: 0.35s; }
+.si__cordon--top .si__tape--thin { top: 46px; transform: rotate(3deg); animation-name: si-unroll-left; animation-delay: 0.6s; }
+.si__cordon--bottom .si__tape { top: 10px; transform: rotate(4deg); animation-name: si-unroll-left; animation-delay: 0.85s; }
+.si__cordon--bottom .si__tape--thin { top: 54px; transform: rotate(-3deg); animation-delay: 1.1s; }
+@keyframes si-unroll-right {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes si-unroll-left {
+  from { clip-path: inset(0 0 0 100%); }
+  to { clip-path: inset(0 0 0 0); }
+}
 
 .si__head { flex: none; padding: 22px 24px 0; text-align: center; }
-.si__line { font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #9a968a; }
 .si__title {
-  margin-top: 12px; font-family: var(--display); font-size: clamp(38px, 12vw, 50px); font-weight: 400; line-height: 0.98; text-transform: uppercase;
+  margin-top: 8px; font-family: var(--display); font-size: clamp(38px, 12vw, 50px); font-weight: 400; line-height: 0.98; text-transform: uppercase;
   color: #efe9d6; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
-.si__sticker { margin-top: 14px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #d24a3e; }
 
-.si__scene { position: relative; flex: 1 1 auto; min-height: 120px; max-height: 320px; margin: 6px 0; color: #f4f4f0; opacity: 0.55; }
-.si__scene svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.si__prints { opacity: 0.45; }
+.si__scene { position: relative; flex: 1 1 auto; min-height: 120px; max-height: 320px; margin: 6px 0; color: #f4f4f0; }
+.si__scene svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.si__chalk { opacity: 0.6; }
+.si__blood { fill: #8a1a14; opacity: 0.85; }
 
 .si__main { flex: none; display: flex; flex-direction: column; gap: 14px; padding: 2px 28px calc(28px + var(--safe-bottom)); }
 .si__lead { text-align: center; font-size: 15px; line-height: 1.45; color: #b8b4a6; }
@@ -106,5 +130,5 @@ button.gg__acct:active, button.gg__acct:disabled { background: #f1f3f4; }
 .gg__fine { margin-top: 18px; font-size: 12px; line-height: 1.5; color: #747775; }
 
 @media (prefers-reduced-motion: reduce) {
-  .si__beam { animation: none; }
+  .si__siren::before, .si__siren::after { animation: none; opacity: 0.6; }
 }

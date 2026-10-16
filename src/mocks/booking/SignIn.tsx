@@ -1,11 +1,10 @@
-// The game's sign-in screen (Quest-Game src/packs/mystery/screens/SignIn.tsx, copied for the look: torchlight, tape,
-// the title, a chalk outline and the way in as a little case file), then a stand-in for Google's account picker.
-// Nothing is signed in: picking the account just moves the mock on.
+// The sign-in screen, from the game's (Quest-Game src/packs/mystery/screens/SignIn.tsx) and moved on: police tape that
+// stretches across the screen as it opens, a sprawled chalk outline with a little blood, and a police car's red and
+// blue going off and on from the left. The way in is the same little case file; then a stand-in for Google's account
+// picker. Nothing is signed in: picking the account just moves the mock on.
 import { useEffect, useRef, useState } from 'react';
 import { GoogleMark } from './google';
 import './signin.css';
-
-const TAPE = 'CRIME SCENE · DO NOT CROSS · '.repeat(8);
 
 type Picker = 'closed' | 'open' | 'signing';
 
@@ -23,24 +22,22 @@ export function SignIn({ name, email, onDone }: { name: string; email: string; o
 
   return (
     <div className="si">
-      <div className="si__beam" aria-hidden="true" />
+      <div className="si__siren" aria-hidden="true" />
       <div className="si__cordon si__cordon--top" aria-hidden="true">
-        <span className="si__tape">{TAPE}</span>
-        <span className="si__tape si__tape--thin">{TAPE}</span>
+        <span className="si__tape" />
+        <span className="si__tape si__tape--thin" />
       </div>
       <header className="si__head">
-        <p className="si__line">Blackwood Manor · one night only</p>
         <h1 className="si__title">
           Mystery
           <br />
           Pub Crawl
         </h1>
-        <p className="si__sticker">· Someone did it ·</p>
       </header>
       <ChalkOutline />
       <div className="si__cordon si__cordon--bottom" aria-hidden="true">
-        <span className="si__tape">{TAPE}</span>
-        <span className="si__tape si__tape--thin">{TAPE}</span>
+        <span className="si__tape" />
+        <span className="si__tape si__tape--thin" />
       </div>
       <main className="si__main">
         <p className="si__lead">Duck under the tape. Your case file is waiting.</p>
@@ -64,36 +61,32 @@ export function SignIn({ name, email, onDone }: { name: string; email: string; o
   );
 }
 
-/** A chalk outline on the floor, with a couple of prints beside it. */
+/**
+ * A chalk outline on the floor, sprawled: one arm flung up past the head, the other out and down, a knee bent out to
+ * the side. A spatter of blood by the head and a few drops around, no more.
+ */
 function ChalkOutline() {
   return (
     <div className="si__scene" aria-hidden="true">
       <svg viewBox="0 0 240 300" preserveAspectRatio="xMidYMid meet">
-        <g transform="rotate(18 120 150)" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="16 3 9 2">
-          <path d="M120 18a22 22 0 1 0 .1 0z M112 64 L80 80 L42 138 L58 150 L90 110 L94 182 L70 280 L94 286 L120 198 L146 286 L170 280 L148 182 L152 110 L182 150 L198 138 L160 80 L128 64" />
+        <g transform="rotate(-26 120 150)">
+        <g className="si__chalk" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="16 3 9 2">
+          <circle cx="114" cy="44" r="20" />
+          <path d="M104 66L54 58L62 26L60 12L46 8L40 16L32 70L90 96L98 160L46 214L54 276L48 292L76 294L78 268L70 226L118 186L146 236L166 282L170 296L196 292L190 276L174 230L152 166L150 104L186 128L196 164L200 180L212 182L220 164L208 108L144 80L128 70Z" />
         </g>
-        <g className="si__prints" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
-          <g transform="translate(196 40) scale(1.4) rotate(12 12 12)">
-            <Print />
-          </g>
-          <g transform="translate(8 218) scale(1.1) rotate(-20 12 12)">
-            <Print />
-          </g>
+        <g className="si__blood">
+          <path d="M150 28c6-3 12 1 12 7s-5 10-11 9c-5-1-8-5-7-9 1-3 3-6 6-7z" />
+          <circle cx="166" cy="24" r="1.8" />
+          <circle cx="163" cy="47" r="1.3" />
+          <circle cx="143" cy="22" r="1.2" />
+          <ellipse cx="62" cy="128" rx="2.6" ry="1.8" transform="rotate(30 62 128)" />
+          <circle cx="69" cy="135" r="1.2" />
+          <circle cx="226" cy="196" r="2" />
+          <circle cx="24" cy="200" r="1.6" />
+        </g>
         </g>
       </svg>
     </div>
-  );
-}
-
-function Print() {
-  return (
-    <>
-      <path d="M5.5 10.5C6.6 6.6 9 5 12 5s5.4 1.6 6.5 5.5" />
-      <path d="M4.8 15c0-1.4.1-2.6.4-3.7M19.2 12.5c.1 2.6-.3 5-1.1 7.2" />
-      <path d="M7.4 18.5c-.4-1.5-.5-3-.4-4.5.2-4 2.3-6.6 5-6.6s4.8 2.6 4.9 6.6c0 1.6-.1 3.1-.5 4.6" />
-      <path d="M9.9 20.6c-.6-1.7-.9-3.6-.8-5.6.1-3 1.3-4.6 2.9-4.6s2.9 1.6 3 4.6c.1 2-.3 4-1 5.8" />
-      <path d="M12 13.8c.5 2.4.4 5-.4 7.6" />
-    </>
   );
 }
 

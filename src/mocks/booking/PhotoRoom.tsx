@@ -15,6 +15,17 @@ const NEXT: Partial<Record<Phase, [Phase, number]>> = {
   flash: ['white', 650],
 };
 
+/** How long the camera button waits alone before offering an upload instead (a laptop, a camera that won't open). */
+const UPLOAD_AFTER_MS = 10_000;
+
+/** Skipping the photo in the mock: a plain silhouette, so the file still has its mugshot. */
+const SILHOUETTE =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 200"><rect width="160" height="200" fill="#c9c5ba"/>' +
+      '<circle cx="80" cy="78" r="34" fill="#55595c"/><path d="M14 200C14 140 44 118 80 118S146 140 146 200Z" fill="#55595c"/></svg>',
+  );
+
 const LINES = ['Ready?', '1... 2... 3...'];
 const COUNT = LINES.join('');
 /** The pause after typing character i: a beat after the question and after each count, otherwise a keystroke. */
@@ -60,6 +71,17 @@ export function PhotoRoom({ onDone }: { onDone(photoUrl: string): void }) {
     if (phase === 'dark') buzz(8);
     else if (phase === 'flash') buzz(40);
   }, [phase]);
+
+  // In the white, after a while with no photo, the other ways out.
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    if (phase !== 'white') return;
+    const timer = window.setTimeout(() => setLate(true), UPLOAD_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+  const took = (file: File | undefined) => {
+    if (file) onDone(URL.createObjectURL(file));
+  };
 
   const first = LINES[0]!.slice(0, Math.min(typed, LINES[0]!.length));
   const second = LINES[1]!.slice(0, Math.max(0, typed - LINES[0]!.length));
@@ -195,23 +217,28 @@ export function PhotoRoom({ onDone }: { onDone(photoUrl: string): void }) {
 
       <div className="bk-ph__white" aria-hidden="true" />
       {at('white') ? (
-        <label className="bk-ph__shoot" onClick={(e) => e.stopPropagation()}>
-          <input
-            className="bk-sr"
-            type="file"
-            accept="image/*"
-            capture="user"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) onDone(URL.createObjectURL(file));
-            }}
-          />
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
-            <circle cx="12" cy="12.8" r="3.6" />
-          </svg>
-          <span className="bk-sr">Take your photo</span>
-        </label>
+        <>
+          <label className="bk-ph__shoot" onClick={(e) => e.stopPropagation()}>
+            <input className="bk-sr" type="file" accept="image/*" capture="user" onChange={(e) => took(e.target.files?.[0])} />
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+              <circle cx="12" cy="12.8" r="3.6" />
+            </svg>
+            <span className="bk-sr">Take your photo</span>
+          </label>
+          <div className="bk-ph__alts" onClick={(e) => e.stopPropagation()}>
+            {late ? (
+              <label className="bk-ph__alt">
+                {/* No capture here: a file or the photo library, which a laptop can do too. */}
+                <input className="bk-sr" type="file" accept="image/*" onChange={(e) => took(e.target.files?.[0])} />
+                Upload a photo instead
+              </label>
+            ) : null}
+            <button type="button" className="bk-ph__alt bk-ph__alt--mock" onClick={() => onDone(SILHOUETTE)}>
+              Mock: skip the photo
+            </button>
+          </div>
+        </>
       ) : null}
     </section>
   );

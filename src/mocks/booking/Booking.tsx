@@ -5,33 +5,39 @@
 // prints come next, their right thumb on a livescan machine (press and hold; nothing is read, it only looks the part),
 // then the file with the inked print and a mugshot to come: the photographer's room, a countdown, the flash, and the
 // phone's own camera for the photo, which goes into the file before it's stamped BOOKED. Last, the detective's calling
-// card with the police's number to save (they'll ring the suspicious), and the file is left on the GM's desk.
+// card with the police's number to save (they'll ring the suspicious), then the police ring the mobile they gave, to be
+// sure they can reach them, and the case opens: the game would start here. Before any of it, a records check waits on
+// the GM to let them in. A phone that's been through it all goes straight to the case next time.
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import '../../themes/mystery.css';
 import './booking.css';
 import { FINGER, PRINT_H, PRINT_W, hashText, makePrint, type Print } from './fingerprint';
 import { CallingCard } from '../phone/SaveNumber';
 import { HoneycombStamp, PoliceBadge } from '../stamp/stamps';
+import { CaseOpen, Standby, TestCall } from './Checks';
 import { buzz, lessMotion } from './feel';
 import { GoogleMark } from './google';
 import { PhotoRoom } from './PhotoRoom';
 import { SignIn } from './SignIn';
+import {
+  cleanUkNumber,
+  forgetDone,
+  isUkMobile,
+  loadDone,
+  saveDone,
+  showUkNumber,
+  shrinkPhoto,
+  typedCountryCode,
+  type Particulars,
+} from './suspect';
 
-type Step = 'signin' | 'room' | 'particulars' | 'letter' | 'prints' | 'booked' | 'photo' | 'number';
-
-interface Particulars {
-  name: string;
-  alias: string;
-  heightCm: number;
-  poison: string | null;
-  marks: string;
-}
+type Step = 'signin' | 'standby' | 'room' | 'particulars' | 'call' | 'letter' | 'prints' | 'booked' | 'photo' | 'number' | 'app';
 
 /** Who the mock pretends signed in with Google. */
 const GOOGLE_NAME = 'Sam Rivers';
 const GOOGLE_EMAIL = 'sam.rivers@example.com';
 const POISONS = ['Pint', 'Wine', 'Gin', 'Cocktail', 'Shots', 'Soft'];
-/** The step tabs; the letter counts as the start of the prints. */
+/** The step tabs; the letter counts as the start of the prints, the test call (last of all) with the booking. */
 const STEPS: { id: Step; label: string }[] = [
   { id: 'particulars', label: 'Particulars' },
   { id: 'prints', label: 'Prints' },
@@ -44,6 +50,7 @@ const caseNumber = (name: string) => {
   return `${pad(h % 97, 2)} · ${pad(h % 1_000_000, 6)}`;
 };
 const sheetNumber = (name: string) => pad(hashText(`sheet:${name}`) % 10_000, 4);
+const blank = (): Particulars => ({ name: GOOGLE_NAME, phone: '', heightCm: 175, poison: null, marks: '' });
 const feetInches = (cm: number) => {
   const inches = Math.round(cm / 2.54);
   return `${Math.floor(inches / 12)}′${inches % 12}″`;
@@ -51,26 +58,57 @@ const feetInches = (cm: number) => {
 
 export default function Booking() {
   const [step, setStep] = useState<Step>('signin');
-  const [who, setWho] = useState<Particulars>({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
-  const print = useMemo(() => makePrint(`${who.name}|${who.alias}`), [who.name, who.alias]);
-  /** Their mugshot, as a local object URL; it never leaves the phone. */
+  const [who, setWho] = useState<Particulars>(blank);
+  const digits = cleanUkNumber(who.phone);
+  const print = useMemo(() => makePrint(`${who.name}|${digits}`), [who.name, digits]);
+  /** Their mugshot, shrunk to a small data URL; it never leaves the phone. */
   const [photo, setPhoto] = useState<string | null>(null);
-  /** Whether they've been through the calling card (saved or copied the police's number). */
-  const [numberSaved, setNumberSaved] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [step]);
 
-  const startOver = () => {
-    setWho({ name: GOOGLE_NAME, alias: '', heightCm: 175, poison: null, marks: '' });
-    if (photo) URL.revokeObjectURL(photo);
+  /** Back to the sign-in. What they'd started is dropped; a finished file stays remembered. */
+  const signOut = () => {
+    setWho(blank());
     setPhoto(null);
-    setNumberSaved(false);
     setStep('signin');
   };
 
-  if (step === 'signin') return <SignIn name={GOOGLE_NAME} email={GOOGLE_EMAIL} onDone={() => setStep('room')} />;
+  if (step === 'signin') {
+    return (
+      <SignIn
+        name={GOOGLE_NAME}
+        email={GOOGLE_EMAIL}
+        onDone={() => {
+          // Booked before on this phone: straight into the game. Otherwise the records check, then the booking.
+          const done = loadDone();
+          if (done) {
+            setWho(done.who);
+            setPhoto(done.photo);
+            setStep('app');
+          } else setStep('standby');
+        }}
+      />
+    );
+  }
+
+  if (step === 'standby') return <Standby name={GOOGLE_NAME} onIn={() => setStep('room')} onOut={signOut} />;
+
+  if (step === 'app') {
+    return (
+      <CaseOpen
+        name={who.name}
+        digits={digits}
+        photo={photo}
+        onSignOut={signOut}
+        onForget={() => {
+          forgetDone();
+          signOut();
+        }}
+      />
+    );
+  }
 
   if (step === 'room') {
     return (
@@ -82,12 +120,7 @@ export default function Booking() {
 
   if (step === 'number') {
     return (
-      <CallingCard
-        onDone={() => {
-          setNumberSaved(true);
-          setStep('booked');
-        }}
-      />
+      <CallingCard onDone={() => setStep('call')} />
     );
   }
 
@@ -96,9 +129,12 @@ export default function Booking() {
       <div className="bk bk--scene">
         <PhotoRoom
           onDone={(url) => {
-            if (photo) URL.revokeObjectURL(photo);
-            setPhoto(url);
-            setStep('booked');
+            // Small enough to remember with the file; the camera's own URL can go once it's copied.
+            void shrinkPhoto(url).then((small) => {
+              if (small !== url) URL.revokeObjectURL(url);
+              setPhoto(small);
+              setStep('booked');
+            });
           }}
         />
       </div>
@@ -117,7 +153,7 @@ export default function Booking() {
         <span>
           Signed in as <strong>{GOOGLE_NAME}</strong>
         </span>
-        <button type="button" className="bk-who__out" onClick={startOver}>
+        <button type="button" className="bk-who__out" onClick={signOut}>
           Not you?
         </button>
       </div>
@@ -125,20 +161,21 @@ export default function Booking() {
       <div key={step} className="bk-step">
         {step === 'particulars' ? (
           <ParticularsSheet who={who} onChange={setWho} onDone={() => setStep('letter')} />
+        ) : step === 'call' ? (
+          <TestCall
+            digits={digits}
+            onNumber={(typed) => setWho({ ...who, phone: typed })}
+            onDone={() => {
+              saveDone({ who, photo });
+              setStep('app');
+            }}
+          />
         ) : step === 'letter' ? (
           <Letter who={who} onDone={() => setStep('prints')} onBack={() => setStep('particulars')} />
         ) : step === 'prints' ? (
           <Livescan print={print} onDone={() => setStep('booked')} onBack={() => setStep('particulars')} />
         ) : (
-          <BookedFile
-            who={who}
-            print={print}
-            photo={photo}
-            numberSaved={numberSaved}
-            onPhoto={() => setStep('photo')}
-            onNumber={() => setStep('number')}
-            onAgain={startOver}
-          />
+          <BookedFile who={who} print={print} photo={photo} onPhoto={() => setStep('photo')} onNumber={() => setStep('number')} />
         )}
       </div>
     </div>
@@ -155,7 +192,7 @@ function GoogleG() {
 
 /** The three steps as file tabs: done ones ticked, this one lifted out in manila. */
 function Steps({ step }: { step: Step }) {
-  const at = STEPS.findIndex((s) => s.id === (step === 'letter' ? 'prints' : step));
+  const at = STEPS.findIndex((s) => s.id === (step === 'letter' ? 'prints' : step === 'call' ? 'booked' : step));
   return (
     <ol className="bk-steps" aria-label="Booking steps">
       {STEPS.map((s, i) => (
@@ -493,15 +530,18 @@ function InterviewRoom({ onDone }: { onDone(): void }) {
 function ParticularsSheet({ who, onChange, onDone }: { who: Particulars; onChange(next: Particulars): void; onDone(): void }) {
   const [tried, setTried] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
-  const aliasRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
   const set = <K extends keyof Particulars>(key: K, value: Particulars[K]) => onChange({ ...who, [key]: value });
   const missingName = !who.name.trim();
-  const missingAlias = !who.alias.trim();
+  const digits = cleanUkNumber(who.phone);
+  const phoneOk = isUkMobile(digits);
 
   const submit = () => {
     setTried(true);
     if (missingName) return nameRef.current?.focus();
-    if (missingAlias) return aliasRef.current?.focus();
+    if (!phoneOk) return phoneRef.current?.focus();
+    // Tidy what they typed into the number we'll ring.
+    set('phone', showUkNumber(digits));
     buzz(12);
     onDone();
   };
@@ -538,18 +578,31 @@ function ParticularsSheet({ who, onChange, onDone }: { who: Particulars; onChang
           )}
         </Field>
 
-        <Field label="Goes by" hint="What the others will call you tonight" missing={tried && missingAlias}>
+        <Field
+          label="Mobile number"
+          hint={
+            typedCountryCode(who.phone) && digits
+              ? `No need for +44: we’ll ring ${showUkNumber(digits)}.`
+              : 'As you’d dial it in the UK, starting 07. Leave off the +44. The police will ring it to check.'
+          }
+          missing={tried && !phoneOk}
+          stamp={who.phone.trim() ? 'Check it' : 'Needed'}
+        >
           {(id) => (
             <input
-              ref={aliasRef}
+              ref={phoneRef}
               id={id}
               className="bk-input"
-              value={who.alias}
-              placeholder="The Duchess, Two-Pint Pete…"
-              autoCapitalize="words"
-              autoComplete="off"
+              type="tel"
+              inputMode="tel"
+              value={who.phone}
+              placeholder="07700 900417"
+              autoComplete="tel-national"
               enterKeyHint="next"
-              onChange={(e) => set('alias', e.target.value)}
+              onChange={(e) => set('phone', e.target.value)}
+              onBlur={() => {
+                if (digits) set('phone', showUkNumber(digits));
+              }}
             />
           )}
         </Field>
@@ -622,7 +675,20 @@ function ParticularsSheet({ who, onChange, onDone }: { who: Particulars; onChang
   );
 }
 
-function Field({ label, hint, missing = false, children }: { label: string; hint?: string; missing?: boolean; children(id: string): ReactNode }) {
+function Field({
+  label,
+  hint,
+  missing = false,
+  stamp = 'Needed',
+  children,
+}: {
+  label: string;
+  hint?: string;
+  missing?: boolean;
+  /** What the stamp says when it's missing or wrong. */
+  stamp?: string;
+  children(id: string): ReactNode;
+}) {
   const id = useId();
   return (
     <div className={`bk-field${missing ? ' is-missing' : ''}`}>
@@ -630,7 +696,7 @@ function Field({ label, hint, missing = false, children }: { label: string; hint
         {label}
         {missing ? (
           <Stamp tone="red" className="bk-stamp--tiny">
-            Needed
+            {stamp}
           </Stamp>
         ) : null}
       </label>
@@ -700,7 +766,7 @@ function Letter({ who, onDone, onBack }: { who: Particulars; onDone(): void; onB
               <dd>{today}</dd>
               <dt>Re</dt>
               <dd>
-                {who.name}, a.k.a. “{who.alias}”
+                {who.name}, tel. {who.phone}
               </dd>
             </dl>
             <div className="bk-letter__body">
@@ -1008,36 +1074,31 @@ function Records({ seed }: { seed: number }) {
 /* ---------------------------------------------------------------- 3 · booked */
 
 /**
- * The file, three times over. First with the print in and the photo still to come, and a Next to the photographer;
- * back from there, the photo pasted in and the file stamped BOOKED, and a Next to the police's number; back from that,
- * settled (no more slamming) and left on the GM's desk.
+ * The file, twice. First with the print in and an empty slot for the photo, and a Next to the photographer; back from
+ * there, the photo pasted in and the file stamped BOOKED, and a Next to the police's number.
  */
 function BookedFile({
   who,
   print,
   photo,
-  numberSaved,
   onPhoto,
   onNumber,
-  onAgain,
 }: {
   who: Particulars;
   print: Print;
   photo: string | null;
-  numberSaved: boolean;
   onPhoto(): void;
   onNumber(): void;
-  onAgain(): void;
 }) {
   useEffect(() => {
-    if (!photo || numberSaved) return;
+    if (!photo) return;
     const id = window.setTimeout(() => buzz(35), 1150);
     return () => window.clearTimeout(id);
-  }, [photo, numberSaved]);
+  }, [photo]);
   const number = caseNumber(who.name);
   return (
     <>
-      <article className={`bk-folder bk-file${photo ? ' has-photo' : ''}${numberSaved ? ' is-settled' : ''}`}>
+      <article className={`bk-folder bk-file${photo ? ' has-photo' : ''}`}>
         <span className="bk-folder__tab">
           Case {number}
           <Paperclip className="bk-clip--tab" />
@@ -1045,7 +1106,7 @@ function BookedFile({
         <div className="bk-folder__body">
           <div className="bk-file__top">
             {photo ? (
-              <Mugshot alias={who.alias} number={number} photo={photo} />
+              <Mugshot label={who.name} number={number} photo={photo} />
             ) : (
               <button type="button" className="bk-mug-slot" onClick={onPhoto}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -1058,7 +1119,7 @@ function BookedFile({
             )}
             <dl className="bk-facts">
               <Fact label="Name">{who.name}</Fact>
-              <Fact label="Goes by">{who.alias}</Fact>
+              <Fact label="Mobile">{who.phone}</Fact>
               <Fact label="Height">
                 {who.heightCm} cm · {feetInches(who.heightCm)}
               </Fact>
@@ -1093,7 +1154,7 @@ function BookedFile({
           ) : null}
         </div>
       </article>
-      {photo && !numberSaved ? (
+      {photo ? (
         <>
           <p className="bk-lead">Booked. One last thing before we let you go: our number.</p>
           <div className="bk-next">
@@ -1101,17 +1162,6 @@ function BookedFile({
               Next <span aria-hidden="true">→</span>
             </button>
           </div>
-        </>
-      ) : photo ? (
-        <>
-          <p className="bk-lead">Your file is on the GM’s desk. You’ll be let into the game once they’ve had a look.</p>
-          <div className="bk-wait" role="status">
-            <span className="bk-wait__dot" aria-hidden="true" />
-            Waiting for the GM
-          </div>
-          <button type="button" className="bk-back bk-back--center" onClick={onAgain}>
-            Start over (mock only)
-          </button>
         </>
       ) : (
         <>
@@ -1136,8 +1186,8 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Their photo against a height chart (in old black and white), holding a placard with their alias and case number. */
-function Mugshot({ alias, number, photo }: { alias: string; number: string; photo: string }) {
+/** Their photo against a height chart (in old black and white), holding a placard with their name and case number. */
+function Mugshot({ label, number, photo }: { label: string; number: string; photo: string }) {
   return (
     <div className="bk-mug" aria-label="Your mugshot" role="img">
       <img className="bk-mug__photo" src={photo} alt="" />
@@ -1149,7 +1199,7 @@ function Mugshot({ alias, number, photo }: { alias: string; number: string; phot
         ))}
       </div>
       <div className="bk-mug__placard" aria-hidden="true">
-        <span>{alias || 'Unknown'}</span>
+        <span>{label || 'Unknown'}</span>
         <span>{number}</span>
       </div>
     </div>

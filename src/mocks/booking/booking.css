@@ -24,6 +24,105 @@
   to { transform: translate(12px, 12px) rotate(1.5deg); }
 }
 
+/* ---------- stand-ins: what the game would hear from the GM or from Twilio, as dashed "Mock:" buttons ---------- */
+.bk-mockctl {
+  display: block; margin: 14px auto 0; padding: 8px 12px; border: 1.5px dashed rgba(239, 233, 214, 0.35); border-radius: 6px;
+  background: none; color: var(--room-faint); cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: 0.5px;
+}
+.bk-mockctl:active { background: rgba(239, 233, 214, 0.06); }
+.bk-mockrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 10px; }
+.bk-mockrow .bk-mockctl { margin-left: 0; margin-right: 0; }
+
+/* ---------- the records check: a green screen running their name, waiting on the duty inspector ---------- */
+.bk-check { display: flex; flex-direction: column; margin: 26px 12px 0; }
+.bk-term {
+  position: relative; display: flex; flex-direction: column; gap: 6px; min-height: 230px; padding: 16px 16px 18px; overflow: hidden;
+  border: 2px solid #0a0e0f; border-radius: 10px; background: radial-gradient(circle at 50% 40%, #0f2c2a 0%, #071211 65%, #040909 100%);
+  box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.85), inset 0 0 0 1px var(--scan-faint), 0 6px 0 rgba(0, 0, 0, 0.55);
+  font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre; color: var(--scan); text-shadow: 0 0 6px rgba(95, 224, 214, 0.55);
+}
+.bk-term::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px); }
+.bk-term__head { margin-bottom: 6px; font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: rgba(95, 224, 214, 0.7); }
+.bk-term__line { animation: bk-term-in 0.25s steps(4) both; }
+@keyframes bk-term-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.bk-term__line.is-waiting { animation: bk-term-in 0.25s steps(4) both, bk-blink 1.1s steps(2) 0.3s infinite; color: var(--pending); text-shadow: 0 0 6px rgba(227, 178, 90, 0.5); }
+.bk-term__caret { width: 0.6em; height: 1.1em; background: var(--scan); animation: bk-blink 0.8s steps(2) infinite; }
+.bk-term__stamp {
+  position: absolute; right: 14px; bottom: 18px; padding: 3px 10px; border-width: 3px; background: rgba(3, 8, 8, 0.85); color: var(--scan);
+  font-size: 13px; white-space: nowrap; text-shadow: 0 0 6px rgba(95, 224, 214, 0.6); animation: bk-slam-small 0.4s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.bk-check .bk-lead { margin-top: 18px; }
+
+/* ---------- the test call: the switchboard ringing their mobile ---------- */
+.bk-call { display: flex; flex-direction: column; gap: 14px; margin: 26px 12px 0; }
+.bk-call__title { font-family: var(--display); font-size: 27px; font-weight: 400; line-height: 1.05; color: var(--room-text); }
+.bk-call__note { margin-top: -6px; font-size: 14px; line-height: 1.45; color: var(--room-sub); }
+.bk-call__panel {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 14px 18px; border-radius: 20px;
+  background: linear-gradient(180deg, #2c2f31, #1b1d1f);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 0 rgba(0, 0, 0, 0.55);
+}
+.bk-call__plate { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #8f9598; }
+.bk-call__handset { position: relative; display: grid; place-items: center; width: 92px; height: 92px; margin: 6px 0 2px; border-radius: 50%; background: #121415; color: var(--scan); }
+.bk-call__handset svg { width: 40px; height: 40px; fill: currentColor; filter: drop-shadow(0 0 6px rgba(95, 224, 214, 0.5)); }
+.bk-call__ring { position: absolute; inset: 0; border: 2px solid var(--scan-dim); border-radius: 50%; opacity: 0; }
+.is-ringing .bk-call__ring { animation: bk-pulse-ring 1.4s ease-out infinite; }
+.is-ringing .bk-call__ring--2 { animation-delay: 0.7s; }
+.is-ringing .bk-call__handset svg { animation: bk-shake 0.36s ease-in-out infinite; }
+@keyframes bk-pulse-ring {
+  from { opacity: 0.9; transform: scale(1); }
+  to { opacity: 0; transform: scale(1.7); }
+}
+.is-dialling .bk-call__handset { color: #8f9598; }
+.is-dialling .bk-call__handset svg { filter: none; animation: bk-blink 0.9s steps(2) infinite; }
+.is-missed .bk-call__handset { color: var(--warn-on-dark); }
+.is-missed .bk-call__handset svg { filter: none; transform: rotate(135deg); }
+.bk-call__number { font-family: var(--mono); font-size: 24px; font-weight: 700; letter-spacing: 1px; color: #d6f5f2; }
+.bk-call__status { min-height: 3em; text-align: center; font-family: var(--mono); font-size: 13px; line-height: 1.5; color: #c5ccce; }
+.is-answered .bk-call__status { color: var(--scan); }
+.is-missed .bk-call__status { color: var(--warn-on-dark); }
+.bk-call__stamp {
+  position: absolute; right: 18px; top: 46px; padding: 2px 8px; border-width: 2.5px; background: rgba(3, 8, 8, 0.88); color: var(--scan);
+  font-size: 12px; text-shadow: 0 0 6px rgba(95, 224, 214, 0.6); animation: bk-slam-small 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.bk-call__retry { display: flex; flex-direction: column; gap: 4px; }
+/* Fixing the number on the spot: a manila slip with the one field. */
+.bk-call__fix {
+  display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 4px; background: var(--manila); color: var(--manila-ink);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.05)); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.55);
+}
+.bk-call__fixlabel {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--manila-sub);
+}
+.bk-call__input {
+  width: 100%; padding: 9px 8px 7px; border: 0; border-bottom: 2px solid var(--manila-ink); border-radius: 0; background: rgba(255, 255, 255, 0.3);
+  color: var(--manila-ink); font-family: var(--mono); font-size: 16px; outline: none; -webkit-appearance: none; appearance: none;
+}
+.bk-call__input:focus { background: rgba(255, 255, 255, 0.55); border-bottom-color: var(--accent); }
+.bk-call__fixhint { font-family: var(--mono); font-size: 11px; color: var(--manila-sub); }
+.bk-call__fix .bk-back { color: var(--manila-sub); }
+
+/* ---------- the case opens: where the game would start ---------- */
+.bk-open { display: flex; flex-direction: column; margin: 26px 12px 0; }
+.bk-open__card {
+  position: relative; display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 4px; background: var(--manila);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(0, 0, 0, 0.05)); color: var(--manila-ink); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.55);
+}
+.bk-open__photo {
+  flex: none; width: 64px; aspect-ratio: 4 / 5; object-fit: cover; border: 4px solid var(--print); border-bottom-width: 10px;
+  background: var(--chart-paper); filter: grayscale(1) sepia(0.18) contrast(1.08); transform: rotate(-2deg);
+}
+.bk-open__who { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-family: var(--mono); }
+.bk-open__who strong { font-size: 16px; overflow-wrap: anywhere; }
+.bk-open__tel { font-size: 13px; color: var(--manila-sub); }
+.bk-open__stamp { position: absolute; right: 12px; bottom: 10px; padding: 1px 7px; border-width: 2.5px; font-size: 14px; transform: rotate(-10deg); opacity: 0.85; }
+.bk-open__title { margin-top: 26px; font-family: var(--display); font-size: 26px; font-weight: 400; line-height: 1.1; text-align: center; color: var(--room-text); }
+.bk-open__game {
+  display: grid; place-items: center; min-height: 160px; margin-top: 18px; border: 2px dashed rgba(239, 233, 214, 0.25); border-radius: 10px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--room-faint);
+}
+
 /* ---------- 0 · the interview room: a desk in the dark, a man behind it, and a lamp that turns on you ---------- */
 .bk--scene { padding: 0; }
 .bk-scene { position: relative; height: 100dvh; min-height: 520px; overflow: hidden; background: #040405; user-select: none; -webkit-user-select: none; }
@@ -180,6 +279,16 @@
 .bk-ph__shoot:active { transform: scale(0.94); }
 .bk-ph__shoot:focus-within { outline: 3px solid var(--accent); outline-offset: 4px; }
 @keyframes bk-ph-shoot { from { opacity: 0; transform: scale(0.6); } }
+/* Under it on the white: an upload after a while, and the mock's skip. */
+.bk-ph__alts {
+  position: absolute; left: 16px; right: 16px; top: calc(50% + 80px); display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.bk-ph__alt {
+  padding: 10px 14px; border: 0; background: none; cursor: pointer; color: var(--room);
+  font-family: var(--mono); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; animation: bk-in 0.35s ease-out both;
+}
+.bk-ph__alt--mock { padding: 8px 12px; border: 1.5px dashed rgba(13, 14, 15, 0.35); border-radius: 6px; color: #5d5a52; font-size: 11px; text-decoration: none; }
+.bk-ph__alt:focus-within, .bk-ph__alt:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 @keyframes bk-ph-ping {
   from { opacity: 0.5; transform: scale(1); }
   to { opacity: 0; transform: scale(1.45); }
@@ -534,8 +643,6 @@
 
 /* ---------- the finished file ---------- */
 .bk-file.has-photo { animation: bk-thump 0.25s ease-out 1.2s; }
-/* Back from the number: the file as it was left, nothing pasted or stamped again. */
-.bk-file.is-settled, .bk-file.is-settled * { animation: none !important; }
 @keyframes bk-thump { 40% { transform: translateY(3px); } }
 .bk-file__top { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 14px; align-items: start; }
 .bk-mug {

@@ -49,7 +49,7 @@ export function SignIn({ name, email, onDone }: { name: string; email: string; o
             <span className="si-file__papers" aria-hidden="true" />
             <span className="si-file__front">
               <span className="si-file__label">Sign in with Google</span>
-              <span className="si-file__fine">We only use your name and photo. The GM approves everyone before they join.</span>
+              <span className="si-file__fine">We only use your name, photo and number. The GM approves everyone before they join.</span>
             </span>
           </span>
         </button>

@@ -14,6 +14,10 @@
   --room-faint: #8d8a80;
   --wall: #3d4042;
   --wall-shadow: #26282a;
+  --walltext: #e9ebec;
+  --rule: #a9adaf;
+  --ink: #161718;
+  --dot: #e2574c;
   --felt: #161816;
   --felt-text: #f2efe4;
   --felt-sub: #c9cdbf;
@@ -28,10 +32,16 @@
   --manila-sub: #5b4a33;
   --kraft: #c9a974;
   --kraft-line: #8e7550;
+  --twine: #b59e78;
+  --twine-dark: #a48c66;
+  --eyelet-edge: #6f7477;
+  --clear-half: #d3e7e5;
   --eyelet: #9aa0a3;
   --stamp-good: #2f5a32;
   --stamp-bad: #8f2a22;
   --stamp-plain: #14544f;
+  --stamp-warm: #7a520a;
+  --pen-red: #c4302b;
   --print: #f1f0ec;
   --chart-paper: #f4ecd5;
   --silhouette: #8d9294;

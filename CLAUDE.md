@@ -15,4 +15,4 @@ front-end page with made-up data, so the user can feel a screen on their phone b
   on press-and-hold controls, safe-area insets (`--safe-top`, `--safe-bottom`), `navigator.vibrate` only as a bonus
   (Android only).
 - **Conventions:** match Quest-Game: ~140-column lines (don't run prettier), comments that say what a piece is for,
-  CSS per mock with a short class prefix (`bk-` for the booking desk).
+  CSS per mock with a short class prefix (`sw-` for the swipe looks).

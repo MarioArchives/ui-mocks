@@ -7,7 +7,7 @@ is built into the game. Each mock is a plain front-end page with made-up data, n
 
 | Mock | Game | What to try |
 |---|---|---|
-| [Booking desk](https://marioarchives.github.io/ui-mocks/#/booking) (`#/booking`) | Mystery Pub Crawl | What a new player sees after signing in with Google: fill in your particulars on a manila booking sheet, then press and hold the livescan glass to have your "prints" taken (nothing is read; it only looks the part). Ends on your booked file, waiting for the GM. Android phones buzz along; iPhones don't support vibration from a web page. |
+| [Swiping between screens](https://marioarchives.github.io/ui-mocks/#/swipe) (`#/swipe`) | Mystery Pub Crawl | Drag sideways between Missions, Log book and My file (or tap a tab) in five looks: side by side, pulling the top sheet off a pile, turning the page, panning across the evidence board, and a torch beam. The screens follow your finger and spring back if you let go early; Slow-mo plays the settling four times slower. |
 
 ## On your phone
 

@@ -1,5 +1,6 @@
 // Several versions of one screen, to compare in the hand: a pill at the top left with ‹ › and the version's name, or
 // swipe sideways (or ← → on a keyboard). Each version is mounted fresh when you land on it, so its opening plays again.
+// A mock whose screens use sideways swipes themselves passes `swipe={false}`, leaving the pill and the keys.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import './variants.css';
 
@@ -9,7 +10,7 @@ export interface Variant {
   render: () => ReactNode;
 }
 
-export function Variants({ items, storageKey }: { items: Variant[]; storageKey: string }) {
+export function Variants({ items, storageKey, swipe: swipes = true }: { items: Variant[]; storageKey: string; swipe?: boolean }) {
   const [at, setAt] = useState(() => {
     try {
       const saved = Number(localStorage.getItem(storageKey));
@@ -43,6 +44,7 @@ export function Variants({ items, storageKey }: { items: Variant[]; storageKey: 
     <div
       className="mk-variants"
       onTouchStart={(e) => {
+        if (!swipes) return;
         const t = e.touches[0];
         swipe.current = t ? { x: t.clientX, y: t.clientY } : null;
       }}

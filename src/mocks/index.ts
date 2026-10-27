@@ -16,35 +16,11 @@ export interface Mock {
 
 export const MOCKS: Mock[] = [
   {
-    id: 'booking',
-    title: 'Booking desk',
-    blurb: 'From the sign-in screen: Google, the records check (the GM lets you in), the interview room, your particulars and a test call, the police letter, your prints and mugshot, the police’s number, then the case opens.',
+    id: 'swipe',
+    title: 'Swiping between screens · 5 looks',
+    blurb: 'Missions, Log book and My file: drag sideways and the screens follow your finger, or tap a tab. Five ways for the move to look; switch with the pill at the top, and try Slow-mo.',
     game: 'Mystery Pub Crawl',
     backdrop: '#0d0e0f',
-    load: () => import('./booking/Booking'),
-  },
-  {
-    id: 'landing',
-    title: 'Landing page · 5 styles',
-    blurb: 'Five takes on the sign-in page: tape, chalk outline and the case-file button, laid out differently. Arrows at the top, or swipe.',
-    game: 'Mystery Pub Crawl',
-    backdrop: '#0d0e0f',
-    load: () => import('./landing/Landing'),
-  },
-  {
-    id: 'stamp',
-    title: 'Police stamp · 3 styles',
-    blurb: 'Purple Manchester Metropolitan Police stamps with a bee at the centre, shown on the letter and up close. Arrows at the top, or swipe.',
-    game: 'Mystery Pub Crawl',
-    backdrop: '#0d0e0f',
-    load: () => import('./stamp/StampOptions'),
-  },
-  {
-    id: 'save-number',
-    title: 'Save our number · 3 styles',
-    blurb: 'Asks suspects to save the police’s number so they know when we ring. Flip between versions with the arrows at the top, or swipe.',
-    game: 'Mystery Pub Crawl',
-    backdrop: '#0d0e0f',
-    load: () => import('./phone/SaveNumber'),
+    load: () => import('./swipe/Swipe'),
   },
 ];

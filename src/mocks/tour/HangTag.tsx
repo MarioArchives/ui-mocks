@@ -2,11 +2,14 @@
 // the tag with a short frayed end (1), the front strand over the top edge and down the face (2), the back strand going
 // down behind (3), the tag riding the top of the hole (4), and a card washer glued round a metal grommet (5). The body
 // is HTML (clipped corners and a masked hole); the rig over it is one SVG, so every tag hangs the same way at any size.
+// Turned over (`flip`), the shape and the rig are mirrored top to bottom, eyelet and knot at the foot, and the words
+// stay upright.
 import { useId, type CSSProperties, type ReactNode, type Ref } from 'react';
 
 export function HangTag({
   width,
   tilt = 0,
+  flip = false,
   className,
   style,
   ref,
@@ -15,13 +18,15 @@ export function HangTag({
   width: number;
   /** Degrees off straight, about the knot. */
   tilt?: number;
+  /** Turned over: the eyelet at the foot, for a tag tied to something under it. */
+  flip?: boolean;
   className?: string;
   style?: CSSProperties;
   ref?: Ref<HTMLDivElement>;
   children: ReactNode;
 }) {
   return (
-    <div className={`tr-ht${className ? ` ${className}` : ''}`} style={{ ...style, width, ['--w' as string]: `${width}px`, ['--rot' as string]: `${tilt}deg` }} ref={ref}>
+    <div className={`tr-ht${flip ? ' tr-ht--flip' : ''}${className ? ` ${className}` : ''}`} style={{ ...style, width, ['--w' as string]: `${width}px`, ['--rot' as string]: `${tilt}deg` }} ref={ref}>
       <div className="tr-ht__shape">
         <div className="tr-ht__body">{children}</div>
       </div>

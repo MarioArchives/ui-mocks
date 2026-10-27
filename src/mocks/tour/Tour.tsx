@@ -11,14 +11,14 @@
 // on a tab, to show someone one place.
 import '@fontsource/caveat/latin-700.css';
 import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import '../../themes/mystery.css';
 import { usePager } from '../swipe/pager';
 import { offsetIn } from './layout';
 import { OFFER_WIDTH, OfferTag, TourCard, type OfferAt } from './screens';
 import { Page, ShadowFrame, SNAP, shown, tick } from './Snapshot';
-import { PARTS, SEALED, SPECIMEN, STOPS, TABS, type SceneId, type TabId } from './stops';
-import { TourLayer, type Phase } from './TourLayer';
+import { PARTS, SEALED, SPECIMEN, STOPS, TABS, type Hop, type SceneId, type TabId } from './stops';
+import { TourLayer, type HopView, type Phase } from './TourLayer';
 
 /** A run of the tour: the stop it's on, the stops it covers (the whole tour or one part) and the tab it started on. */
 interface Run {
@@ -29,6 +29,10 @@ interface Run {
   phase: Phase;
   /** Ended at the last stop rather than left early. */
   done?: boolean;
+  /** On the way to stop `to`: showing its i-th hop. */
+  hop?: { to: number; i: number };
+  /** What the stop before lit, when it was on this same screen (for the pen's dotted trail). */
+  trail?: string[] | null;
 }
 
 /** How long the lights take to go down, or come up, around the swap to and from the specimen night. */
@@ -36,6 +40,13 @@ const DIM_MS = 260;
 const HOLD_MS = 360;
 /** With reduced motion the pager's spring runs this many times faster, so a tab change lands in one frame. */
 const INSTANT = 1e-4;
+/** A hop: the page turning to its screen (when it has one) before the pen points; the tour layer says when it has
+ * pointed (HOP_SAFE_MS is in case it never does). */
+const HOP_TURN_MS = 560;
+const HOP_SAFE_MS = 4000;
+
+/** The screen a hop is pointed at on: the last one of its hops so far that moves to another, if any. */
+const hopScreen = (via: Hop[], i: number) => via.slice(0, i + 1).reverse().find((h) => h.at)?.at ?? null;
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
@@ -128,12 +139,17 @@ function Frame() {
     [later, reduced],
   );
 
+  /** Counts moves, so a hop still under way knows when it has been overtaken (Next, Back, End tour). */
+  const hopping = useRef(0);
+  const hopShown = useRef<() => void>(() => {});
+
   /** Leaves the tour: the lights go down, the app comes back as it was, the lights come up. */
   const finish = useCallback(
     (done: boolean) => {
       const r = runRef.current;
       if (!r || r.phase !== 'on') return;
-      setRun({ ...r, phase: 'out', done });
+      hopping.current++; // a hop under way stops here
+      setRun({ ...r, phase: 'out', hop: undefined, done });
       later(() => {
         setRun((x) => x && { ...x, phase: 'gone' });
         goTo(r.origin);
@@ -147,20 +163,46 @@ function Frame() {
     [later, reduced, goTo, say],
   );
 
+  // Moving on to a stop somewhere else goes by its hops: the pen points at each thing you'd tap, then the tour follows.
+  // Next during a hop skips straight there; Back stays put. Back never hops.
   const step = useCallback(
     (by: 1 | -1) => {
       const r = runRef.current;
       if (!r || r.phase !== 'on') return;
+      const seq = ++hopping.current;
+      if (r.hop) return setRun(by === 1 ? { ...r, stop: r.hop.to, hop: undefined, trail: null } : { ...r, hop: undefined });
       const to = r.stop + by;
       if (to > r.to) return finish(true);
       if (to < r.from) return;
-      setRun({ ...r, stop: to });
+      const here = STOPS[r.stop]!;
+      const there = STOPS[to]!;
+      const via = by === 1 ? (there.via ?? []) : [];
+      if (!via.length) {
+        const same = by === 1 && here.tab === there.tab && here.scene === there.scene;
+        return setRun({ ...r, stop: to, hop: undefined, trail: same ? here.lit : null });
+      }
+      const hop = (i: number) => {
+        if (hopping.current !== seq) return;
+        if (i >= via.length) return setRun((x) => x && { ...x, stop: to, hop: undefined, trail: null });
+        setRun((x) => x && { ...x, hop: { to, i } });
+        let moved = false;
+        const on = () => {
+          if (moved) return;
+          moved = true;
+          hop(i + 1);
+        };
+        hopShown.current = on;
+        later(on, HOP_SAFE_MS);
+      };
+      hop(0);
     },
-    [finish],
+    [finish, later],
   );
 
-  // The tabs follow the tour.
-  const stopTab = run && (run.phase === 'on' || run.phase === 'out') ? TABS.indexOf(STOPS[run.stop]!.tab) : null;
+  // The tabs follow the tour, and its hops.
+  const hopNow = run?.hop ? (STOPS[run.hop.to]!.via ?? [])[run.hop.i] ?? null : null;
+  const hopAt = run?.hop ? hopScreen(STOPS[run.hop.to]!.via ?? [], run.hop.i) : null;
+  const stopTab = run && (run.phase === 'on' || run.phase === 'out') ? TABS.indexOf(hopAt?.tab ?? STOPS[run.stop]!.tab) : null;
   useLayoutEffect(() => {
     if (stopTab !== null) goTo(stopTab);
   }, [stopTab, goTo]);
@@ -208,10 +250,26 @@ function Frame() {
 
   const specimen = !!run && (run.phase === 'on' || run.phase === 'out');
   const stop = specimen ? STOPS[run.stop]! : null;
-  const sceneOf = (tab: TabId): SceneId => (!stop ? SEALED[tab] : stop.tab === tab ? stop.scene : SPECIMEN[tab]);
+  const sceneOf = (tab: TabId): SceneId =>
+    !stop ? SEALED[tab] : hopAt?.tab === tab ? hopAt.scene : stop.tab === tab ? stop.scene : SPECIMEN[tab];
   const scenes = TABS.map(sceneOf);
   const shownScene = SNAP.scenes[scenes[index]!];
-  const overlays = stop ? SNAP.scenes[stop.scene].overlays.filter(shown) : [];
+  const overlays = !stop ? [] : hopAt ? SNAP.scenes[hopAt.scene].overlays.filter(shown) : stop.bare ? [] : SNAP.scenes[stop.scene].overlays.filter(shown);
+
+  // What the pen points at on this hop, and what it points from: what the stop lit, or the hop before's target.
+  const hopKey = run?.hop ? `${run.hop.to}:${run.hop.i}` : '';
+  const hopView = useMemo<HopView | null>(() => {
+    if (!run?.hop || !hopNow) return null;
+    const via = STOPS[run.hop.to]!.via ?? [];
+    const before = run.hop.i > 0 ? [via[run.hop.i - 1]!.target] : STOPS[run.stop]!.lit;
+    return {
+      target: hopNow.target,
+      label: hopNow.label,
+      from: before,
+      settle: hopNow.at && !reduced ? HOP_TURN_MS : 0,
+      elsewhere: !!hopScreen(via, run.hop.i),
+    };
+  }, [hopKey, reduced]);
 
   // Where the offer hangs: tied on under the wax seal, down the file's right-hand side.
   const [offerAt, setOfferAt] = useState<OfferAt | null>(null);
@@ -291,7 +349,7 @@ function Frame() {
       </div>
       <div className="tr-bar" data-tour="tabbar" inert={!!run} onClick={onBar} dangerouslySetInnerHTML={{ __html: shownScene.tabbar }} />
       {overlays.map((html, i) => (
-        <div key={`${stop?.scene}-${i}`} className="tr-over" dangerouslySetInnerHTML={{ __html: html }} />
+        <div key={`${hopAt?.scene ?? stop?.scene}-${i}`} className="tr-over" dangerouslySetInnerHTML={{ __html: html }} />
       ))}
       {toast ? (
         <div className="toasts" data-snap-fixed="">
@@ -310,6 +368,9 @@ function Frame() {
           first={run.stop === run.from}
           last={run.stop === run.to}
           reduced={reduced}
+          hop={hopView}
+          trail={run.trail ?? null}
+          onHopShown={() => hopShown.current()}
           onBack={() => step(-1)}
           onNext={() => step(1)}
           onEnd={() => finish(false)}

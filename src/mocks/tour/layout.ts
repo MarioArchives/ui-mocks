@@ -1,9 +1,10 @@
 // Where the torch's spot, the brass tacks, the twine and the hanging tag go for one stop. The lit elements are
 // measured where they will rest (by offsets, which ignore transforms, so a screen still sliding in or a sheet still
 // rising counts as arrived), and a screen that scrolls is scrolled, as little as it can be, so the element and its tag
-// both fit. The tag hangs under the spot from a tack on its bottom edge when there's room; otherwise from a tack at
-// the top of the screen, its twine running on down behind it to a tack on the spot. When neither fits (a short
-// screen), the smaller `core` box is tried, and last of all the tag hangs over the foot of a shortened spot.
+// both fit. The tag hangs under the spot from a tack on its bottom edge when there's room; otherwise it sits above the
+// spot turned over, its eyelet at the foot, tied by a short strand to a tack on the spot's top edge, so the twine never
+// crosses the tag. When neither fits (a short screen), the smaller `core` box is tried, and last of all the tag hangs
+// over the foot of a shortened spot. A lit name is a data-tour name the snapshot stamped, or a CSS selector.
 
 export interface Box {
   x: number;
@@ -21,6 +22,8 @@ export interface Placement {
   tacks: { x: number; y: number }[];
   /** A screen to scroll, and where to. */
   scroll: { el: HTMLElement; top: number } | null;
+  /** The tag sits above the spot, turned over: eyelet and twine at its foot. */
+  flip: boolean;
 }
 
 /** The free space the tag may hang in: under the overlay's top strip, above the tab bar's home-indicator inset. */
@@ -39,11 +42,15 @@ const TAG_SIDE = 10;
 /** Under the spot: its tack sits 8px inside the bottom edge, the twine drops 24px to the knot and the tag's top is
  * 20px under the knot, so the tag starts this far below the spot. */
 const BELOW = 36;
-/** From the top: the tack 9px under the limit, the tag 42px under the tack. */
-const TOP_TACK = 9;
-const TOP_TAG = TOP_TACK + 42;
-/** Room kept between a tag hung from the top and the spot under it. */
-const GAP = 12;
+/** Over the spot, the same turned over: the tack 8px inside its top edge, 24px of twine up to the knot, and the tag's
+ * foot 20px over the knot, so the tag ends this far above the tack. */
+const ABOVE = 44;
+
+/** The lowest the spot's top may be for a turned-over tag to fit above it, under the strip. */
+const roomAbove = (tag: { h: number }, lim: Limits) => lim.top + 4 + tag.h + ABOVE - PAD;
+
+/** A lit name as a selector: a data-tour name the snapshot stamped, or a selector as it is. */
+export const selectorOf = (name: string) => (/^[.#[]/.test(name) ? name : `[data-tour="${name}"]`);
 
 /** Where `el` sits inside `ancestor` (one of its offset parents), ignoring transforms and the ancestor's scroll. */
 export function offsetIn(el: HTMLElement, ancestor: HTMLElement): { x: number; y: number } {
@@ -78,7 +85,7 @@ interface Lit {
 function measure(root: HTMLElement, names: string[]): Lit[] {
   const out: Lit[] = [];
   for (const name of names) {
-    const el = root.querySelector<HTMLElement>(`[data-tour="${name}"]`);
+    const el = root.querySelector<HTMLElement>(selectorOf(name));
     if (!el || !el.offsetParent) continue;
     const scroller = el.parentElement?.closest<HTMLElement>('[data-scroller]') ?? null;
     const at = offsetIn(el, scroller && root.contains(scroller) ? scroller : root);
@@ -156,21 +163,22 @@ function hangBelow(spot: Box, tag: { w: number; h: number }, lim: Limits, scroll
   const { x, knot } = tagX(spot, tag, lim);
   const tack = spot.y + spot.h - PAD;
   const y = tagTop ?? tack + 44;
-  return { spot, tag: { x, y }, cord: { x: knot, y1: tack, y2: y - 20 }, tacks: [{ x: knot, y: tack }], scroll };
+  return { spot, tag: { x, y }, cord: { x: knot, y1: tack, y2: y - 20 }, tacks: [{ x: knot, y: tack }], scroll, flip: false };
 }
 
+/** Above the spot, turned over: the eyelet at the tag's foot, one strand down from the knot to a tack on the spot. */
 function hangAbove(spot: Box, tag: { w: number; h: number }, lim: Limits, scroll: Placement['scroll']): Placement {
   const { x, knot } = tagX(spot, tag, lim);
-  const top = lim.top + TOP_TACK;
-  const bottom = spot.y + PAD + 1;
-  return { spot, tag: { x, y: lim.top + TOP_TAG }, cord: { x: knot, y1: top, y2: bottom }, tacks: [{ x: knot, y: top }, { x: knot, y: bottom }], scroll };
+  const tack = spot.y + PAD;
+  const y = tack - ABOVE - tag.h;
+  return { spot, tag: { x, y }, cord: { x: knot, y1: y + tag.h + 20, y2: tack }, tacks: [{ x: knot, y: tack }], scroll, flip: true };
 }
 
 /** How much of a scroller's top the overlay's strip (End tour, the badge) covers: lit parts scroll no higher. */
 const under = (view: View, lim: Limits) => Math.max(0, lim.top - view.top);
 
 const fitsBelow = (spot: Box, tag: { h: number }, lim: Limits) => spot.y + spot.h + BELOW + tag.h <= lim.bottom;
-const fitsAbove = (spot: Box, tag: { h: number }, lim: Limits) => lim.top + TOP_TAG + tag.h + GAP <= spot.y;
+const fitsAbove = (spot: Box, tag: { h: number }, lim: Limits) => roomAbove(tag, lim) <= spot.y;
 
 function fitWith(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, lim: Limits, growTop: number): Placement | null {
   const sc = lits.find((l) => l.scroller)?.scroller ?? null;
@@ -203,8 +211,8 @@ function fitWith(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, 
     const spot = ok(s, (b) => fitsBelow(b, tag, lim));
     if (spot) return hangBelow(spot, tag, lim, scrollTo(s));
   }
-  // From the top: scroll up just enough for the tag to fit above the spot.
-  const hiAbove = Math.min(hi, view.top + top - PAD - lim.top - TOP_TAG - tag.h - GAP);
+  // Above it: scroll up just enough for the turned-over tag to fit above the spot.
+  const hiAbove = Math.min(hi, view.top + top - PAD - growTop - roomAbove(tag, lim));
   if (seen <= hiAbove) {
     const s = Math.round(clamp(view.now, seen, hiAbove));
     const spot = ok(s, (b) => fitsAbove(b, tag, lim));

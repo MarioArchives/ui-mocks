@@ -105,7 +105,14 @@ snap-root, snap-body { display: block; }
 /* ---- the hanging tags (HangTag.tsx) ---- */
 
 .tr-ht { position: absolute; transform: rotate(var(--rot, 0deg)); transform-origin: calc(50% + 2px) -20px; }
-.tr-ht__shape { filter: drop-shadow(0 4px 0 var(--wall-shadow)) drop-shadow(0 12px 16px var(--deep-shadow)); }
+/* Its shadow, a hard edge and a soft fall below, cast by a box behind the body that keeps clear of the clipped corners.
+   (Not a drop-shadow filter: over the tag's text, Chrome on some GPUs leaves ghosts of the tag on the page.) */
+.tr-ht__shape { position: relative; }
+.tr-ht__shape::before {
+  content: ''; position: absolute; z-index: -1; left: 0; right: 0; top: 26px; bottom: 0;
+  box-shadow: 0 4px 0 var(--wall-shadow), 0 12px 16px var(--deep-shadow);
+}
+.tr-ht--flip .tr-ht__shape::before { left: 26px; right: 26px; top: 0; }
 .tr-ht__body {
   position: relative; display: flex; flex-direction: column; min-height: calc(var(--w, 210px) * 1.16); padding: 24px 15px 12px;
   background: linear-gradient(180deg, var(--glass), transparent 55%), var(--kraft); color: var(--manila-ink);

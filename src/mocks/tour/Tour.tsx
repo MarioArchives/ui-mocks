@@ -1,20 +1,24 @@
-// The torch tour (Mystery Pub Crawl): the new player's walkthrough, option B refined. A player has booked in and the
-// case opens at 19:00: Missions shows the sealed case file with its countdown, and a kraft tag tied to its twine offers
-// the tour. Taking it fills the real tabs with a made-up specimen night and puts out the lights but for a torch on one
-// thing at a time, with a tag on twine saying what it does: twelve stops across Missions, Log book and My file, the
-// tabs switching as it goes. Next and Back on the tag, or ← → on a keyboard; Escape or End tour leaves. Afterwards My
-// file keeps "How tonight works": the whole tour again, or one part of it.
+// The torch tour (Mystery Pub Crawl): the new player's walkthrough, on the game's own screens. A player has booked in
+// and the case is still sealed: Missions shows the sealed case file with its countdown, and a kraft tag tied to its
+// twine offers the tour. Taking it fills the tabs with a specimen night (the game's demo, as Maya) and puts out the
+// lights but for a torch on one thing at a time, with a tag on twine saying what it does: thirteen stops across
+// Missions (its map and standings too), Log book and My file, the tabs turning as it goes. Next and Back on the tag, or
+// ← → on a keyboard; Escape or End tour leaves. Afterwards My file keeps "How tonight works": the whole tour again, or
+// one part of it.
 //
-// Outside the tour the three tabs swipe as in the game. `?stop=5` in the address (before the #) opens the tour at that
-// stop, and `?tab=file` opens on a tab, to show someone one place.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+// Every screen is a snapshot of the real game (Snapshot.tsx, scripts/snapshot-tour.mjs). Outside the tour the three
+// tabs turn as in the game. `?stop=5` in the address (before the #) opens the tour at that stop, and `?tab=file` opens
+// on a tab, to show someone one place.
+import '@fontsource/caveat/latin-700.css';
+import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import '../../themes/mystery.css';
 import { usePager } from '../swipe/pager';
-import { BookIcon, FolderIcon, PersonIcon, PhoneIcon } from '../swipe/screens';
-import { ChargeSheet, ClockIcon, FilePane, LogbookPane, MissionsPane, OfferTag, WrongToast } from './screens';
-import { PARTS, STOPS, TABS, type Scene } from './stops';
+import { offsetIn } from './layout';
+import { OFFER_WIDTH, OfferTag, TourCard, type OfferAt } from './screens';
+import { Page, ShadowFrame, SNAP, shown, tick } from './Snapshot';
+import { PARTS, SEALED, SPECIMEN, STOPS, TABS, type SceneId, type TabId } from './stops';
 import { TourLayer, type Phase } from './TourLayer';
-import './tour.css';
 
 /** A run of the tour: the stop it's on, the stops it covers (the whole tour or one part) and the tab it started on. */
 interface Run {
@@ -32,12 +36,6 @@ const DIM_MS = 260;
 const HOLD_MS = 360;
 /** With reduced motion the pager's spring runs this many times faster, so a tab change lands in one frame. */
 const INSTANT = 1e-4;
-/** The mock's clock starts at 16:42, two hours and eighteen minutes before the case opens at 19:00. */
-const START_MIN = 16 * 60 + 42;
-const OPENS_MIN = 19 * 60;
-
-const TAB_LABELS = ['Missions', 'Log book', 'My file'];
-const TAB_ICONS = [FolderIcon, BookIcon, PersonIcon];
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
@@ -51,65 +49,50 @@ function useReducedMotion() {
   return reduced;
 }
 
-/** Minutes since midnight on the mock's clock, moving with real time from 16:42. */
-function useClock() {
-  const [mounted] = useState(() => Date.now());
-  const [now, setNow] = useState(START_MIN);
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(START_MIN + Math.floor((Date.now() - mounted) / 60000)), 10000);
-    return () => window.clearInterval(id);
-  }, [mounted]);
-  return now;
-}
+const hhmm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 
-const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
-
-/** The case number, in place of the game's name on Missions and Log book. */
-function CaseNo() {
+export default function TorchTour() {
   return (
-    <span className="tr-caseno">
-      <span className="tr-caseno__k">Case no.</span>
-      <span className="tr-caseno__no">64 · 721897</span>
-    </span>
+    <ShadowFrame>
+      <Frame />
+    </ShadowFrame>
   );
 }
 
-export default function TorchTour() {
+function Frame() {
   const root = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const panes = useRef<(HTMLElement | null)[]>([]);
-  const tabs = useRef<(HTMLElement | null)[]>([]);
-  const marker = useRef<HTMLSpanElement>(null);
-  const caseTitle = useRef<HTMLSpanElement>(null);
-  const fileTitle = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotion();
-  const clock = useClock();
 
   const [offer, setOffer] = useState<'open' | 'leaving' | 'gone'>('open');
   const [taken, setTaken] = useState<string | null>(null);
   const [run, setRun] = useState<Run | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Side by side, as in the game: each screen a screen-width along, the tab bar's marker and the title following.
+  // The game's page turn: going on, the page you leave turns over on its left edge towards you and darkens, the next
+  // lying under it; going back, the previous page comes down on top. One number, the position along the tabs, draws it.
   const paint = useCallback((pos: number) => {
     panes.current.forEach((pane, i) => {
       if (!pane) return;
       const d = i - pos;
-      pane.style.visibility = Math.abs(d) >= 1 ? 'hidden' : '';
-      pane.style.transform = `translate3d(${d * 100}%, 0, 0)`;
+      const s = pane.style;
+      if (d <= -1 || d >= 1) {
+        s.visibility = 'hidden';
+        s.transform = s.filter = '';
+        s.zIndex = '0';
+      } else if (d <= 0) {
+        s.visibility = '';
+        s.zIndex = '2';
+        s.transform = d < 0 ? `perspective(2200px) rotateY(${d * 90}deg)` : '';
+        s.filter = d < 0 ? `brightness(${1 + 0.45 * d})` : '';
+      } else {
+        s.visibility = '';
+        s.zIndex = '1';
+        s.transform = '';
+        s.filter = `brightness(${0.45 + 0.55 * (1 - d)})`;
+      }
     });
-    if (marker.current) marker.current.style.transform = `translate3d(${pos * 100}%, 0, 0)`;
-    tabs.current.forEach((tab, i) => tab?.style.setProperty('--lit', String(Math.max(0, 1 - Math.abs(i - pos)))));
-    // Missions and Log book share the case number; My file has its own title.
-    const f = Math.max(0, Math.min(1, pos - 1));
-    if (caseTitle.current) {
-      caseTitle.current.style.opacity = String(Math.max(0, 1 - f * 1.8));
-      caseTitle.current.style.transform = `translate3d(${-f * 28}px, 0, 0)`;
-    }
-    if (fileTitle.current) {
-      fileTitle.current.style.opacity = String(Math.max(0, (f - 0.45) * 1.8));
-      fileTitle.current.style.transform = `translate3d(${(1 - f) * 28}px, 0, 0)`;
-    }
   }, []);
   const { index, goTo } = usePager(stage, TABS.length, paint, reduced ? INSTANT : 1);
 
@@ -153,16 +136,15 @@ export default function TorchTour() {
       setRun({ ...r, phase: 'out', done });
       later(() => {
         setRun((x) => x && { ...x, phase: 'gone' });
-        stage.current?.querySelectorAll<HTMLElement>('[data-scroller]').forEach((el) => (el.scrollTop = 0));
         goTo(r.origin);
-        if (done) setTaken(hhmm(clock));
+        if (done) setTaken(hhmm(new Date()));
       }, reduced ? 0 : DIM_MS);
       later(() => {
         setRun(null);
         say(done ? 'Tour done. It stays in My file: How tonight works.' : 'Tour closed. Pick it up in My file whenever you like.');
       }, reduced ? 0 : DIM_MS + HOLD_MS + DIM_MS);
     },
-    [later, reduced, goTo, clock, say],
+    [later, reduced, goTo, say],
   );
 
   const step = useCallback(
@@ -205,7 +187,7 @@ export default function TorchTour() {
   // ?stop=n and ?tab=… in the address, to open on one place.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const tab = TABS.indexOf(q.get('tab') as (typeof TABS)[number]);
+    const tab = TABS.indexOf(q.get('tab') as TabId);
     if (tab > 0) goTo(tab);
     const n = Number(q.get('stop'));
     if (Number.isInteger(n) && n >= 1 && n <= STOPS.length) {
@@ -214,10 +196,59 @@ export default function TorchTour() {
     }
   }, [goTo]);
 
+  // The sealed screens' countdowns keep running, from what they showed when they were kept.
+  useEffect(() => {
+    const start = Date.now();
+    const from = SNAP.scenes['pre-missions'].count ?? 0;
+    const draw = () => root.current && tick(root.current, from - (Date.now() - start) / 1000);
+    draw();
+    const id = window.setInterval(draw, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   const specimen = !!run && (run.phase === 'on' || run.phase === 'out');
-  const scene: Scene = specimen ? STOPS[run.stop]!.scene : {};
-  const left = Math.max(0, OPENS_MIN - clock);
-  const countdown = { h: Math.floor(left / 60), m: left % 60 };
+  const stop = specimen ? STOPS[run.stop]! : null;
+  const sceneOf = (tab: TabId): SceneId => (!stop ? SEALED[tab] : stop.tab === tab ? stop.scene : SPECIMEN[tab]);
+  const scenes = TABS.map(sceneOf);
+  const shownScene = SNAP.scenes[scenes[index]!];
+  const overlays = stop ? SNAP.scenes[stop.scene].overlays.filter(shown) : [];
+
+  // Where the offer hangs: tied on under the wax seal, down the file's right-hand side.
+  const [offerAt, setOfferAt] = useState<OfferAt | null>(null);
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    const el = root.current;
+    const bar = el?.querySelector<HTMLElement>('.tr-bar');
+    if (!el || !bar) return;
+    const seen = new ResizeObserver(() => {
+      setWidth(el.clientWidth);
+      el.style.setProperty('--tr-bar-h', `${bar.offsetHeight}px`);
+    });
+    seen.observe(el);
+    seen.observe(bar);
+    return () => seen.disconnect();
+  }, []);
+  useLayoutEffect(() => {
+    const pane = panes.current[0];
+    const wax = pane?.querySelector<HTMLElement>('[data-tour="wax"]');
+    const file = pane?.querySelector<HTMLElement>('[data-tour="sealed"]');
+    if (scenes[0] !== 'pre-missions' || !pane || !wax || !file) return setOfferAt(null);
+    const w = offsetIn(wax, pane);
+    const f = offsetIn(file, pane);
+    setOfferAt({ x: Math.min(w.x + wax.offsetWidth / 2 - OFFER_WIDTH / 2, f.x + file.offsetWidth - OFFER_WIDTH - 4), y: w.y + wax.offsetHeight - 6 });
+  }, [scenes[0], width]);
+
+  // "How tonight works" goes in My file under the suspect file, in the game's own column.
+  const [cardSlot, setCardSlot] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const anchor = scenes[2] === 'pre-file' ? panes.current[2]?.querySelector('[data-tour="suspect"]') : null;
+    if (!anchor) return setCardSlot(null);
+    const slot = document.createElement('div');
+    slot.className = 'tr-cardslot';
+    anchor.after(slot);
+    setCardSlot(slot);
+    return () => slot.remove();
+  }, [scenes[2]]);
 
   const putOff = () => {
     setOffer('leaving');
@@ -229,83 +260,47 @@ export default function TorchTour() {
     begin(p?.from ?? 0, p?.to ?? STOPS.length - 1);
   };
 
-  return (
-    <div className={`tr-app${specimen ? ' is-touring' : ''}${scene.peek ? ' is-peek' : ''}`} ref={root}>
-      <header className="tr-appbar" inert={!!run}>
-        <h1 className="tr-title">
-          <span ref={caseTitle} aria-hidden={index === 2}>
-            <CaseNo />
-          </span>
-          <span ref={fileTitle} aria-hidden={index !== 2}>
-            My file
-          </span>
-        </h1>
-        <span className="tr-appbar__right">
-          {specimen ? (
-            <span className="tr-police" data-tour="police">
-              <span className="tr-tipline" aria-label="Tip off the police">
-                <PhoneIcon />
-              </span>
-              <span className="tr-chip">12 pts · #2</span>
-            </span>
-          ) : (
-            <span className="tr-chip" aria-label={`${countdown.h} hours ${countdown.m} minutes until the case opens`}>
-              <ClockIcon />
-              {`${countdown.h}h ${countdown.m}m`}
-            </span>
-          )}
-          <span className="tr-avatar" aria-label="Your account" />
-        </span>
-      </header>
+  // The screens are pictures of the game: their links go nowhere here; the tab bar's turn the page.
+  const stay = (e: MouseEvent) => {
+    const a = (e.target as Element).closest('a[href]');
+    if (a) e.preventDefault();
+  };
+  const onBar = (e: MouseEvent) => {
+    const tab = (e.target as Element).closest('.tabbar__tab');
+    if (!tab?.parentElement) return;
+    e.preventDefault();
+    goTo([...tab.parentElement.children].indexOf(tab));
+  };
 
+  return (
+    <div className={`tr-app${specimen ? ' is-touring' : ''}${stop?.peek ? ' is-peek' : ''}`} ref={root} onClickCapture={stay}>
       <div className="tr-stage" ref={stage} inert={!!run}>
-        <div className="tr-panes">
-          {TABS.map((id, i) => (
-            <section key={id} className={`tr-pane tr-pane--${id}`} ref={(el) => void (panes.current[i] = el)} aria-hidden={i !== index} inert={i !== index}>
-              <div className="tr-scroll" data-scroller>
-                {id === 'missions' ? (
-                  <MissionsPane
-                    specimen={specimen}
-                    scene={scene}
-                    left={countdown}
-                    offer={offer === 'gone' ? null : <OfferTag onTake={() => begin()} onLater={putOff} gone={offer === 'leaving'} />}
-                  />
-                ) : id === 'logbook' ? (
-                  <LogbookPane specimen={specimen} />
-                ) : (
-                  <FilePane specimen={specimen} taken={taken} onTour={tourFromFile} />
-                )}
-              </div>
-            </section>
-          ))}
-        </div>
-        {specimen && scene.wrong ? <WrongToast /> : null}
-        {toast ? (
-          <p className="tr-toast" role="status">
+        {TABS.map((id, i) => (
+          <section
+            key={id}
+            className={`tr-pane tr-pane--${id}${SNAP.scenes[scenes[i]!].appClass.includes('app--fill') ? ' is-fill' : ''}`}
+            data-scroller
+            ref={(el) => void (panes.current[i] = el)}
+            aria-hidden={i !== index}
+            inert={i !== index}
+          >
+            <Page id={scenes[i]!} />
+            {i === 0 && offerAt && offer !== 'gone' ? <OfferTag at={offerAt} onTake={() => begin()} onLater={putOff} gone={offer === 'leaving'} /> : null}
+          </section>
+        ))}
+      </div>
+      <div className="tr-bar" data-tour="tabbar" inert={!!run} onClick={onBar} dangerouslySetInnerHTML={{ __html: shownScene.tabbar }} />
+      {overlays.map((html, i) => (
+        <div key={`${stop?.scene}-${i}`} className="tr-over" dangerouslySetInnerHTML={{ __html: html }} />
+      ))}
+      {toast ? (
+        <div className="toasts" data-snap-fixed="">
+          <p className="toast toast--info" role="status">
             {toast}
           </p>
-        ) : null}
-      </div>
-
-      <nav className="tr-tabbar" aria-label="Main" data-tour="tabbar" inert={!!run}>
-        <span className="tr-tabbar__marker" ref={marker} aria-hidden="true" />
-        {TABS.map((id, i) => {
-          const Icon = TAB_ICONS[i]!;
-          return (
-            <button key={id} type="button" className="tr-tab" ref={(el) => void (tabs.current[i] = el)} aria-current={i === index ? 'page' : undefined} onClick={() => goTo(i)}>
-              <Icon />
-              <span>{TAB_LABELS[i]}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {specimen && scene.sheet ? (
-        <>
-          <div className="tr-sheet-scrim" aria-hidden="true" />
-          <ChargeSheet step={scene.sheet} />
-        </>
+        </div>
       ) : null}
+      {cardSlot ? createPortal(<TourCard taken={taken} onTour={tourFromFile} />, cardSlot) : null}
 
       {run ? (
         <TourLayer

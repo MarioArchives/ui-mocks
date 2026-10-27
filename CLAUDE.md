@@ -14,5 +14,7 @@ front-end page with made-up data, so the user can feel a screen on their phone b
 - **Phone first:** check at about 360–430 px wide. 16px+ type in inputs (iOS zoom), `touch-action`/`user-select` off
   on press-and-hold controls, safe-area insets (`--safe-top`, `--safe-bottom`), `navigator.vibrate` only as a bonus
   (Android only).
+- **The torch tour's screens are the game's:** snapshots of Quest-Game's demo (`scripts/snapshot-tour.mjs`, README › The
+  torch tour's screens) drawn in a shadow root; refresh them with the script rather than editing `src/mocks/tour/snap/`.
 - **Conventions:** match Quest-Game: ~140-column lines (don't run prettier), comments that say what a piece is for,
   CSS per mock with a short class prefix (`sw-` for the swipe looks, `tr-` for the torch tour).

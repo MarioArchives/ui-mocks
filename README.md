@@ -7,7 +7,7 @@ is built into the game. Each mock is a plain front-end page with made-up data, n
 
 | Mock | Game | What to try |
 |---|---|---|
-| [The torch tour](https://marioarchives.github.io/ui-mocks/#/tour) (`#/tour`) | Mystery Pub Crawl | The new player's walkthrough while the case is still sealed: tap Take the tour on the tag tied to the sealed case file, and the tabs fill with a made-up specimen night, dark but for a torch on one thing at a time and a kraft tag on twine saying what it does. Twelve stops across Missions, Log book and My file: Next and Back on the tag, ← → on a keyboard, Escape or End tour to leave. Afterwards My file keeps "How tonight works": the whole tour again, or one part. `?stop=5` before the `#` opens that stop. |
+| [The torch tour](https://marioarchives.github.io/ui-mocks/#/tour) (`#/tour`) | Mystery Pub Crawl | The new player's walkthrough while the case is still sealed, on the game's own screens: tap Take the tour on the tag tied on under the sealed case file's wax seal, and the tabs fill with a specimen night (the game's demo, as Maya), dark but for a torch on one thing at a time and a kraft tag on twine saying what it does. Thirteen stops across Missions (its Map and Standings too), Log book and My file: Next and Back on the tag, ← → on a keyboard, Escape or End tour to leave. Afterwards My file keeps "How tonight works": the whole tour again, or one part. `?stop=5` before the `#` opens that stop. |
 | [Swiping between screens](https://marioarchives.github.io/ui-mocks/#/swipe) (`#/swipe`) | Mystery Pub Crawl | Drag sideways between Missions, Log book and My file (or tap a tab) in five looks: side by side, pulling the top sheet off a pile, turning the page, panning across the evidence board, and a torch beam. The screens follow your finger and spring back if you let go early; Slow-mo plays the settling four times slower. |
 
 ## On your phone
@@ -39,3 +39,29 @@ Node 24 (`.nvmrc`). With nvm: `export PATH=~/.nvm/versions/node/v24.13.1/bin:$PA
 For a game's look, import its theme from `src/themes/` (`mystery.css` copies the mystery pack's tokens and fonts from
 Quest-Game's `src/packs/mystery/theme.css`; keep them in step when the game's change). Use 16px or larger type in
 inputs, or iPhones zoom in when you tap them.
+
+
+## The torch tour's screens
+
+The torch tour (`src/mocks/tour/`) doesn't draw the game's screens itself: they are snapshots of the real game, taken
+from Quest-Game's in-memory demo by `scripts/snapshot-tour.mjs`, so they look exactly as the game does. The script
+drives a headless Chrome (its own profile and port) through the demo as Maya, puts the game into each state the tour
+shows (the case sealed two hours ahead; the specimen night's Missions, Map, Standings, Log book and My file; Alex's
+file and Form 3 from the search to an upheld charge; a dismissed one), and keeps each screen's DOM and the game's CSS:
+
+- `src/mocks/tour/snap/scenes.json`: each screen's app bar and page, its tab bar and what was over it, as HTML, with the
+  elements the tour lights named (`data-tour="…"`, by the selectors in the script's `keep(…)` calls);
+- `src/mocks/tour/snap/game.css`: the game's CSS, with `html`, `body` and `:root` renamed so it works in a shadow root;
+- `public/tour-snap/`: the images, map tiles (© OpenStreetMap contributors) and clip stills the screens use, with a
+  `CREDITS.md`.
+
+The mock draws them in a shadow root (`Snapshot.tsx`), so the game's CSS and the mocks' never meet, and the tour's
+torch, twine and tags on top. To refresh them after the game's look changes:
+
+1. In Quest-Game, start the demo with the mystery pack: `VITE_GAME_PACK=mystery npm run mock -- --port 5180` (the
+   script's default `--url` is http://localhost:5180/; this repo's `npm run dev` wants that port too, so give one of
+   them another).
+2. Here: `node scripts/snapshot-tour.mjs` (`--url <demo>`, `--keep-shots` to save what Chrome saw, `--size 360x640 --dry`
+   to see the game at another size without writing). It takes about three minutes: the demo's timer has to run.
+3. Restart `npm run dev` if it was running (Vite only notices a new folder in `public/` on start), and check the tour:
+   a stop whose element moved in the game may need its names in `src/mocks/tour/stops.ts` or the script.

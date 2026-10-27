@@ -1,27 +1,37 @@
-// The torch tour's twelve stops, in order, and the five parts My file can start it at. Each stop names the tab it
-// happens on, what the specimen night shows there, the elements the torch lights (by their data-tour names) and what
-// the tag says. The numbers are the mystery pack's settings: every move is worth 5, a verdict +1, three charges a
-// night and a 10-minute wait before charging the same suspect again.
+// The torch tour's thirteen stops, in order, and the five parts My file can start it at. Each stop names the tab it
+// happens on, the game screen shown there (a snapshot from snap/scenes.json, see scripts/snapshot-tour.mjs), the
+// elements the torch lights (by the data-tour names the snapshot stamped on them) and what the tag says. The words
+// follow what the snapshots show (Maya's specimen night in the game's demo) and the mystery pack's settings: every move
+// is worth 5, a verdict +1, the top entry +5, three charges a night and a 10-minute wait before charging the same
+// suspect again. In the tag's text {heart} and {eye} draw the log book's two marks.
 
 export type TabId = 'missions' | 'logbook' | 'file';
 export const TABS: TabId[] = ['missions', 'logbook', 'file'];
 
-/** What the specimen night shows under a stop. */
-export interface Scene {
-  /** The Missions folder's open tab. */
-  folder?: 'missions' | 'standings';
-  /** Priya's file, opened from Standings over the Missions folder, with Form 3 on it. */
-  suspect?: boolean;
-  /** Form 3's full-height sheet, at one of its steps. */
-  sheet?: 'search' | 'terms' | 'upheld';
-  /** A charge dismissed: struck through on her file, and the toast that says so. */
-  wrong?: boolean;
-  /** The screens edge sideways and back, to show the swipe. */
-  peek?: boolean;
-}
+/** The snapshots, by the names scripts/snapshot-tour.mjs keeps them under. */
+export type SceneId =
+  | 'missions'
+  | 'map'
+  | 'standings'
+  | 'logbook'
+  | 'file'
+  | 'alex'
+  | 'search'
+  | 'terms'
+  | 'upheld'
+  | 'wrong'
+  | 'pre-missions'
+  | 'pre-logbook'
+  | 'pre-file';
+
+/** What each tab shows before the case opens (and outside the tour), and on the specimen night when no stop is on it. */
+export const SEALED: Record<TabId, SceneId> = { missions: 'pre-missions', logbook: 'pre-logbook', file: 'pre-file' };
+export const SPECIMEN: Record<TabId, SceneId> = { missions: 'missions', logbook: 'logbook', file: 'file' };
 
 export interface Stop {
   tab: TabId;
+  /** The game screen on that tab (with its sheet or toast, if it has one). */
+  scene: SceneId;
   /** The tag's heading, in type. */
   title: string;
   /** What the tag says, in handwriting. */
@@ -30,111 +40,121 @@ export interface Stop {
   lit: string[];
   /** A smaller box to light instead when `lit` and the tag can't both fit on the screen. */
   core?: string[];
-  scene: Scene;
   /** Light this much above the element too: a folder's tab, or the screens moving over the tab bar. */
   growTop?: number;
   /** A wider tag, for a stop with more to say. */
   width?: number;
   /** A red-pen note over the lit part. */
   pen?: 'swipe';
+  /** The pages edge over and back, to show the swipe. */
+  peek?: boolean;
 }
 
 export const STOPS: Stop[] = [
   {
     tab: 'missions',
-    title: 'Group missions',
-    text: 'Everyone sends a photo before the clock runs out. Then yes or no on each one. Most yeses: +5. Skip it: −5.',
+    scene: 'missions',
+    title: 'Live now',
+    text: 'What’s live sits in front. Roll call comes every hour: one photo or a comment within 15 min, or −5. Tap a tab behind to pull another forward.',
     lit: ['live'],
-    scene: { folder: 'missions' },
+    width: 236,
   },
   {
     tab: 'missions',
-    title: 'Story and roll call',
-    text: 'The GM opens story missions as the case unfolds. Roll call comes every hour: 15 min to answer, −5 if you miss it.',
-    lit: ['story', 'rollcall'],
-    core: ['story'],
-    scene: { folder: 'missions' },
+    scene: 'missions',
+    title: 'Group events and story',
+    text: 'Group events drop at any time: everyone sends a photo, then yes or no on each. Most yeses wins +5; sit it out, −5. Story chapters open as the GM tells the case.',
+    lit: ['events', 'story'],
+    core: ['events'],
+    width: 240,
   },
   {
     tab: 'missions',
-    title: 'Map and standings',
-    text: 'Map: the route, one bar revealed at a time. Standings: above +10 you’re trusted, below −10 you’re watched. Tap a face to open their file.',
-    lit: ['ftabs', 'standings'],
-    core: ['standings'],
-    scene: { folder: 'standings' },
+    scene: 'map',
+    title: 'Map',
+    text: 'The route, one bar at a time: the GM reveals each stop as you go. Now and Next up top; the faces are players sharing where they are.',
+    lit: ['strip', 'route'],
+    core: ['route'],
   },
   {
     tab: 'missions',
+    scene: 'standings',
+    title: 'Standings',
+    text: 'Everyone’s score, from zero. Above +10 you’re trusted; below −10 you’re watched. Tap a face to open their file.',
+    lit: ['st-top', 'st-row3'],
+    core: ['st-top', 'st-row2'],
+  },
+  {
+    tab: 'missions',
+    scene: 'missions',
     title: 'Swipe between tabs',
-    text: 'Swipe left or right to move between Missions, Log book and My file. Or tap the tabs.',
+    text: 'Swipe left or right to turn the page between Missions, Log book and My file. Or tap the tabs.',
     lit: ['tabbar'],
     growTop: 130,
-    scene: { folder: 'missions', peek: true },
     pen: 'swipe',
+    peek: true,
   },
   {
     tab: 'logbook',
+    scene: 'logbook',
     title: 'Log book',
-    text: 'Heart it if you believe it, eye it if you doubt it, or neither. You see the counts once you pick. After 30 min (3+ picks) the majority wins: side with it, +1. Most hearts minus eyes is pinned on top: +5 to its player while it stays.',
+    text: 'A {heart} or an {eye} on anyone else’s entry, one pick each. Counts show once you pick. After 30 min, with 3+ picks, the majority wins: +1 to its side. Most hearts less eyes is pinned on top: +5 to its player while it stays.',
     lit: ['top-card', 'entry-new'],
     core: ['entry-new'],
-    width: 258,
-    scene: {},
+    width: 262,
   },
   {
     tab: 'file',
+    scene: 'file',
     title: 'Your missions',
-    text: 'Five secret ones. Done one? Submit it and name a witness: confirmed, +5. Then destroy the evidence (+5) or frame someone (−5 to them).',
+    text: 'Five secret ones. Done one? Submit it and name a witness: once they confirm, +5. Then destroy the evidence (+5) or frame someone (−5 to them).',
     lit: ['mission'],
-    width: 230,
-    scene: {},
+    width: 232,
   },
   {
     tab: 'missions',
+    scene: 'alex',
     title: 'Accuse someone',
-    text: 'Know what someone’s up to? Open their file: tap their face on Standings. Charge them on Form 3. Three charges a night.',
+    text: 'Know what someone’s up to? Tap their face on Standings to open their file, then charge them on Form 3. Three charges a night.',
     lit: ['suspect-head', 'form3'],
     core: ['form3'],
-    growTop: 26,
-    scene: { suspect: true },
   },
   {
     tab: 'missions',
+    scene: 'search',
     title: 'Name the mission',
-    text: 'Type any word from the mission you think they’re on, then tap it. You choose from the whole book of 68.',
-    lit: ['cs-search'],
+    text: 'Type any word from the mission you think they’re on, then tap it. All 68 are in the book.',
+    lit: ['cs-search', 'cs-hits'],
     core: ['cs-hits'],
-    scene: { suspect: true, sheet: 'search' },
   },
   {
     tab: 'missions',
+    scene: 'terms',
     title: 'Sign and file',
-    text: 'Read the terms, sign, then hold the red button to file. A charge can’t be taken back.',
-    lit: ['cs-terms'],
-    core: ['cs-file'],
-    scene: { suspect: true, sheet: 'terms' },
+    text: 'Read the terms, then hold the red button to file. A charge can’t be taken back.',
+    lit: ['cs-terms', 'cs-file'],
+    core: ['cs-sign', 'cs-file'],
   },
   {
     tab: 'missions',
+    scene: 'upheld',
     title: 'If you’re right',
-    text: 'Upheld: you +5, Priya −5. Her cover’s blown in the log book, and she’s dealt a fresh mission.',
-    lit: ['cs-upheld'],
-    scene: { suspect: true, sheet: 'upheld' },
+    text: 'Upheld: you +5, Alex −5. Everyone sees it in the log book, and Alex is dealt a fresh mission.',
+    lit: ['cs-upheld', 'cs-result'],
   },
   {
     tab: 'missions',
+    scene: 'wrong',
     title: 'If you’re wrong',
-    text: 'Dismissed: you −5, and nobody’s told. Then wait 10 min to charge Priya again.',
-    lit: ['toast', 'form3'],
-    core: ['form3'],
-    scene: { suspect: true, wrong: true },
+    text: 'Dismissed: you −5, and nobody’s told. Then wait 10 min to charge Alex again.',
+    lit: ['form3'],
   },
   {
     tab: 'missions',
+    scene: 'missions',
     title: 'The police',
     text: 'Below −10 they ring you on Telegram every 30 min: answer in their chat. Above +10, this phone tips them off. Case updates land there too.',
     lit: ['police'],
-    scene: { folder: 'missions' },
   },
 ];
 
@@ -146,12 +166,12 @@ export interface Part {
 }
 
 export const PARTS: Part[] = [
-  { label: 'Missions', from: 0, to: 3 },
-  { label: 'Log book', from: 4, to: 4 },
-  { label: 'Your missions', from: 5, to: 5 },
-  { label: 'Accusing', from: 6, to: 10 },
-  { label: 'Police', from: 11, to: 11 },
+  { label: 'Missions', from: 0, to: 4 },
+  { label: 'Log book', from: 5, to: 5 },
+  { label: 'Your missions', from: 6, to: 6 },
+  { label: 'Accusing', from: 7, to: 11 },
+  { label: 'Police', from: 12, to: 12 },
 ];
 
 /** How each tag hangs: a degree or so off straight, never the same way twice running. */
-export const TILT = [-1, 1, -1, 0.8, -0.8, 1, -1, 1, -1, 0.8, -0.8, -1.2];
+export const TILT = [-1, 1, -0.8, 1, 0.8, -0.8, 1, -1, 1, -1, 0.8, -0.8, -1.2];

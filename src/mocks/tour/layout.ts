@@ -49,6 +49,11 @@ const GAP = 12;
 export function offsetIn(el: HTMLElement, ancestor: HTMLElement): { x: number; y: number } {
   let x = 0;
   let y = 0;
+  // The scroll of anything between them (a carousel scrolled sideways) moves the element too.
+  for (let up = el.parentElement; up && up !== ancestor; up = up.parentElement) {
+    x -= up.scrollLeft;
+    y -= up.scrollTop;
+  }
   let node: HTMLElement | null = el;
   while (node && node !== ancestor) {
     x += node.offsetLeft;
@@ -161,6 +166,9 @@ function hangAbove(spot: Box, tag: { w: number; h: number }, lim: Limits, scroll
   return { spot, tag: { x, y: lim.top + TOP_TAG }, cord: { x: knot, y1: top, y2: bottom }, tacks: [{ x: knot, y: top }, { x: knot, y: bottom }], scroll };
 }
 
+/** How much of a scroller's top the overlay's strip (End tour, the badge) covers: lit parts scroll no higher. */
+const under = (view: View, lim: Limits) => Math.max(0, lim.top - view.top);
+
 const fitsBelow = (spot: Box, tag: { h: number }, lim: Limits) => spot.y + spot.h + BELOW + tag.h <= lim.bottom;
 const fitsAbove = (spot: Box, tag: { h: number }, lim: Limits) => lim.top + TOP_TAG + tag.h + GAP <= spot.y;
 
@@ -177,9 +185,9 @@ function fitWith(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, 
   const scrolled = union(lits.filter((l) => l.scroller).map((l) => l.box));
   const top = scrolled.y;
   const bottom = scrolled.y + scrolled.h;
-  /** Scrolled no further than `hi`, the lit part's top (and its light, where it can) stays on screen; at least `seen`,
-   * its bottom does. */
-  const hi = clamp(top - PAD - growTop, 0, view.max);
+  /** Scrolled no further than `hi`, the lit part's top (and its light, where it can) stays on screen, below the
+   * overlay's top strip; at least `seen`, its bottom does. */
+  const hi = clamp(top - PAD - growTop - under(view, lim), 0, view.max);
   const seen = clamp(bottom + PAD - view.h, 0, view.max);
   const ok = (s: number, room: (spot: Box) => boolean) => {
     const shown = top - s >= -0.5 && bottom - s <= view.h + 0.5;
@@ -213,7 +221,7 @@ function squeeze(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, 
   let s = 0;
   if (view) {
     const scrolled = union(lits.filter((l) => l.scroller).map((l) => l.box));
-    s = Math.round(clamp(scrolled.y - PAD - growTop, 0, view.max));
+    s = Math.round(clamp(scrolled.y - PAD - growTop - under(view, lim), 0, view.max));
   }
   const full = spotAt(lits, view, s, lim, growTop);
   const lowest = Math.max(lim.top + 60, lim.bottom - tag.h);

@@ -4,17 +4,25 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { HangTag, Tack } from './HangTag';
 import { place, type Limits, type Placement } from './layout';
-import { ArrowIcon, CheckIcon } from './screens';
+import { ArrowIcon, CheckIcon, TagText } from './screens';
 import { STOPS, TILT } from './stops';
 
 export type Phase = 'in' | 'on' | 'out' | 'gone';
+
+/** Whether the SPECIMEN NIGHT badge steps down under the case number: when the torch is on it where it hangs, at the
+ * top in the middle, and not on the place it would step down to. */
+function low(spot: Placement['spot'], width: number): boolean {
+  const hits = (x: number, y: number, w: number, h: number) => spot.x < x + w && spot.x + spot.w > x && spot.y < y + h && spot.y + spot.h > y;
+  return hits(width / 2 - 80, 0, 160, 40) && !hits(4, 46, 156, 38);
+}
 
 /** The tag's width: the stop's own, else the mockup's 220, never wider than the phone allows. */
 const tagWidth = (stop: number, phone: number) => Math.min(STOPS[stop]!.width ?? 220, phone - 24);
 
 function limits(root: HTMLElement, top: HTMLElement | null): Limits {
-  const bar = root.querySelector<HTMLElement>('.tr-tabbar');
-  const inset = bar ? parseFloat(getComputedStyle(bar).paddingBottom) || 0 : 0;
+  const bar = root.querySelector<HTMLElement>('.tr-bar');
+  const nav = bar?.querySelector<HTMLElement>('.tabbar');
+  const inset = nav ? parseFloat(getComputedStyle(nav).paddingBottom) || 0 : 0;
   return {
     top: top ? top.offsetTop + top.offsetHeight + 2 : 40,
     bottom: bar ? bar.offsetTop + bar.offsetHeight - inset - 6 : root.clientHeight - 8,
@@ -71,7 +79,7 @@ export function TourLayer({
       const behavior = reduced || instant ? 'auto' : 'smooth';
       if (p.scroll) p.scroll.el.scrollTo({ top: p.scroll.top, behavior });
       // A tab with nothing lit on it goes back to its top, rather than staying wherever the last stop left it.
-      const tab = el.querySelector<HTMLElement>(`.tr-pane--${s.tab} [data-scroller]`);
+      const tab = el.querySelector<HTMLElement>(`.tr-pane--${s.tab}[data-scroller]`);
       if (tab && tab.scrollTop > 0 && !s.lit.some((name) => tab.querySelector(`[data-tour="${name}"]`))) tab.scrollTo({ top: 0, behavior });
     },
     [root, s, stop, width, reduced],
@@ -165,7 +173,7 @@ export function TourLayer({
               {s.title}
             </p>
             <p className="tr-ht__t" id="tr-stop-text">
-              {s.text}
+              <TagText text={s.text} />
             </p>
             <p className="tr-ht__foot">
               <button type="button" className="tr-ht__back" onClick={onBack} disabled={first}>
@@ -187,7 +195,7 @@ export function TourLayer({
         </HangTag>
       </div>
       <span className="tr-black" aria-hidden="true" />
-      <div className="tr-strip" ref={top}>
+      <div className={`tr-strip${shown && low(shown.spot, root.current?.clientWidth ?? 390) ? ' is-low' : ''}`} ref={top}>
         <button type="button" className="tr-end" onClick={onEnd}>
           End tour
         </button>

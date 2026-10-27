@@ -18,7 +18,7 @@ export const MOCKS: Mock[] = [
   {
     id: 'tour',
     title: 'The torch tour',
-    blurb: 'The new player’s walkthrough: take the tour from the tag on the sealed case file, and a torch lights a specimen night one thing at a time, twelve stops from group missions to the police.',
+    blurb: 'The new player’s walkthrough, on the game’s own screens: take the tour from the tag on the sealed case file, and a torch lights a specimen night one thing at a time, thirteen stops from the roll call and the map to the police.',
     game: 'Mystery Pub Crawl',
     backdrop: '#0d0e0f',
     load: () => import('./tour/Tour'),

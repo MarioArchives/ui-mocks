@@ -1,4 +1,4 @@
-// The torch tour's thirteen stops, in order, and the five parts My file can start it at. Each stop names the tab it
+// The torch tour's seventeen stops, in order, and the five parts My file can start it at. Each stop names the tab it
 // happens on, the game screen shown there (a snapshot from snap/scenes.json, see scripts/snapshot-tour.mjs), the
 // elements the torch lights (by the data-tour names the snapshot stamped on them) and what the tag says. The words
 // follow what the snapshots show (Maya's specimen night in the game's demo) and the mystery pack's settings: every move
@@ -22,6 +22,10 @@ export type SceneId =
   | 'terms'
   | 'upheld'
   | 'wrong'
+  | 'tip-pick'
+  | 'tip-note'
+  | 'tip-sent'
+  | 'tip-logbook'
   | 'pre-missions'
   | 'pre-logbook'
   | 'pre-file';
@@ -32,13 +36,15 @@ export const SPECIMEN: Record<TabId, SceneId> = { missions: 'missions', logbook:
 
 /**
  * One hop on the way to a stop elsewhere: the thing you'd tap (a CSS selector in the game's snapshot, or a data-tour
- * name) and what a screen reader hears on the way. It is pointed at on the screen being left, or on `at` when the hop is on a screen
- * between (Standings, on the way from My file to someone's file).
+ * name) and what a screen reader hears on the way. It is pointed at on the screen being left, or on `at` when the hop
+ * is on a screen between (Standings, on the way from My file to someone's file). The torch always goes to it; the pen
+ * draws its arrow unless `arrow` is false (where the arrow would only be a stub, the thing being right by the spot).
  */
 export interface Hop {
   at?: { tab: TabId; scene: SceneId };
   target: string;
   label: string;
+  arrow?: false;
 }
 
 export interface Stop {
@@ -97,12 +103,19 @@ export const STOPS: Stop[] = [
   {
     tab: 'missions',
     scene: 'standings',
-    via: [{ target: '.tr-pane--missions .bd-tab:nth-child(3)', label: 'Standings' }],
+    via: [{ target: '.tr-pane--missions .bd-tab:nth-child(3)', label: 'Standings', arrow: false }],
     title: 'Standings',
-    text: 'Everyone’s score, from zero. Climb past a set score and you’re a trusted confidant; sink below one and you’re a person of interest. Tap a face to open their file.',
-    width: 236,
+    text: 'Everyone’s score, from zero: in the clear to the right, under suspicion to the left. Tap a face to open their file.',
     lit: ['st-top', 'st-row3'],
     core: ['st-top', 'st-row2'],
+  },
+  {
+    tab: 'missions',
+    scene: 'standings',
+    title: 'Trusted or watched',
+    text: 'Climb past a set score and you’re a trusted confidant: you can tip off the police about someone. Sink below one and you’re a person of interest: the police ring you.',
+    width: 236,
+    lit: ['legend'],
   },
   {
     tab: 'missions',
@@ -184,9 +197,38 @@ export const STOPS: Stop[] = [
     scene: 'wrong',
     bare: true,
     title: 'The police',
-    text: 'Sink below a set score and you’re a person of interest: the police ring you on Telegram now and then, so answer them in the chat. Climb past one and you’re a trusted confidant: this phone tips them off about someone. Case updates land there too.',
-    width: 250,
+    text: 'This phone is your line to the police. A person of interest gets rung on Telegram now and then: answer them in the chat. Case updates land there too.',
+    width: 236,
     lit: ['.tr-pane--missions .appbar__score'],
+  },
+  {
+    tab: 'missions',
+    scene: 'tip-pick',
+    via: [{ target: '.tr-pane--missions .tipline', label: 'the tip line' }],
+    title: 'Tip them off',
+    text: 'A trusted confidant’s phone lights up. Tap it and pick who to tip off.',
+    lit: ['tip-pick'],
+  },
+  {
+    tab: 'missions',
+    scene: 'tip-note',
+    via: [{ target: 'tip-alex', label: 'Alex' }],
+    title: 'What they’ve been up to',
+    text: 'Say what you saw, then send. The police put it to them with a question: right, they gain 5; wrong, they lose 5.',
+    lit: ['tip-field', 'tip-send'],
+    core: ['tip-field'],
+  },
+  {
+    tab: 'logbook',
+    scene: 'tip-logbook',
+    bare: true,
+    via: [
+      { target: 'tip-send', label: 'send' },
+      { at: { tab: 'missions', scene: 'tip-sent' }, target: '.tr-bar .tabbar__tab:nth-child(2)', label: 'Log book' },
+    ],
+    title: 'The police ring them',
+    text: 'They get the call, and the log book names you and what you wrote. Your line rests a while after.',
+    lit: ['tip-entry'],
   },
 ];
 
@@ -198,12 +240,12 @@ export interface Part {
 }
 
 export const PARTS: Part[] = [
-  { label: 'Missions', from: 0, to: 4 },
-  { label: 'Log book', from: 5, to: 5 },
-  { label: 'Your missions', from: 6, to: 6 },
-  { label: 'Accusing', from: 7, to: 11 },
-  { label: 'Police', from: 12, to: 12 },
+  { label: 'Missions', from: 0, to: 5 },
+  { label: 'Log book', from: 6, to: 6 },
+  { label: 'Your missions', from: 7, to: 7 },
+  { label: 'Accusing', from: 8, to: 12 },
+  { label: 'Police', from: 13, to: 16 },
 ];
 
 /** How each tag hangs: a degree or so off straight, never the same way twice running. */
-export const TILT = [-1, 1, -0.8, 1, 0.8, -0.8, 1, -1, 1, -1, 0.8, -0.8, -1.2];
+export const TILT = [-1, 1, -0.8, 1, -0.9, 0.8, -0.8, 1, -1, 1, -1, 0.8, -0.8, 1.1, -1.2, 0.9, -1];

@@ -31,8 +31,6 @@ interface Run {
   done?: boolean;
   /** On the way to stop `to`: showing its i-th hop. */
   hop?: { to: number; i: number };
-  /** What the stop before lit, when it was on this same screen (for the pen's dotted trail). */
-  trail?: string[] | null;
 }
 
 /** How long the lights take to go down, or come up, around the swap to and from the specimen night. */
@@ -170,20 +168,15 @@ function Frame() {
       const r = runRef.current;
       if (!r || r.phase !== 'on') return;
       const seq = ++hopping.current;
-      if (r.hop) return setRun(by === 1 ? { ...r, stop: r.hop.to, hop: undefined, trail: null } : { ...r, hop: undefined });
+      if (r.hop) return setRun(by === 1 ? { ...r, stop: r.hop.to, hop: undefined } : { ...r, hop: undefined });
       const to = r.stop + by;
       if (to > r.to) return finish(true);
       if (to < r.from) return;
-      const here = STOPS[r.stop]!;
-      const there = STOPS[to]!;
-      const via = by === 1 ? (there.via ?? []) : [];
-      if (!via.length) {
-        const same = by === 1 && here.tab === there.tab && here.scene === there.scene;
-        return setRun({ ...r, stop: to, hop: undefined, trail: same ? here.lit : null });
-      }
+      const via = by === 1 ? (STOPS[to]!.via ?? []) : [];
+      if (!via.length) return setRun({ ...r, stop: to, hop: undefined });
       const hop = (i: number) => {
         if (hopping.current !== seq) return;
-        if (i >= via.length) return setRun((x) => x && { ...x, stop: to, hop: undefined, trail: null });
+        if (i >= via.length) return setRun((x) => x && { ...x, stop: to, hop: undefined });
         setRun((x) => x && { ...x, hop: { to, i } });
         let moved = false;
         const on = () => {
@@ -268,6 +261,7 @@ function Frame() {
       from: before,
       settle: hopNow.at && !reduced ? HOP_TURN_MS : 0,
       elsewhere: !!hopScreen(via, run.hop.i),
+      arrow: hopNow.arrow !== false,
     };
   }, [hopKey, reduced]);
 
@@ -370,7 +364,6 @@ function Frame() {
           progress={{ at: run.stop - run.from + 1, of: run.to - run.from + 1 }}
           reduced={reduced}
           hop={hopView}
-          trail={run.trail ?? null}
           onHopShown={() => hopShown.current()}
           onBack={() => step(-1)}
           onNext={() => step(1)}

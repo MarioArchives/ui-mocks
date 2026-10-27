@@ -1,13 +1,12 @@
 // The tour over the app: everything dark but a torch's spot on the stop's element, a kraft tag tied to a brass tack on
 // it (hanging under it, or turned over above it so the twine never crosses the tag), the SPECIMEN NIGHT badge at the
 // top, and at the foot a progress bar and Skip. The spot, the twine, the tacks and the tag glide from stop to stop (or
-// jump, with reduced motion); the tag swings a little as it lands. The red pen (Marks.tsx) trails a dotted line from
-// the last spot on the same screen, and on the way to somewhere else draws an arrow to each thing you'd tap (a hop),
-// the torch going with it.
+// jump, with reduced motion); the tag swings a little as it lands. On the way to somewhere else the torch goes to each
+// thing you'd tap (a hop), the red pen (Marks.tsx) drawing an arrow to it unless the hop says not to.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { HangTag, Tack } from './HangTag';
 import { place, selectorOf, type Box, type Limits, type Placement } from './layout';
-import { Arrow, boxIn, contains, Trail, union, within } from './Marks';
+import { Arrow, boxIn, contains, union, within } from './Marks';
 import { ArrowIcon, CheckIcon, TagText } from './screens';
 import { STOPS, TILT } from './stops';
 
@@ -25,6 +24,8 @@ export interface HopView {
   settle: number;
   /** On a screen other than the stop's (so nothing the stop lit is there). */
   elsewhere: boolean;
+  /** Draw the pen's arrow to it (the torch goes there either way). */
+  arrow: boolean;
 }
 
 /** Whether the SPECIMEN NIGHT badge steps down under the case number: when the torch is on it where it hangs, at the
@@ -45,6 +46,7 @@ function limits(root: HTMLElement, top: HTMLElement | null): Limits {
     top: top ? top.offsetTop + top.offsetHeight + 2 : 40,
     bottom: bar ? bar.offsetTop + bar.offsetHeight - inset - 6 : root.clientHeight - 8,
     width: root.clientWidth,
+    floor: root.clientHeight,
   };
 }
 
@@ -65,12 +67,21 @@ const padded = (b: Box, width: number, pad = 6): Box => {
   return { x: x0, y: b.y - pad, w: x1 - x0, h: b.h + pad * 2 };
 };
 
+/** Where an arrow from the tag sets off: from its side facing the target, a third of the way down, so the arrow has
+ * room to sweep out and round even when the target sits right by the tag. */
+const tagSide = (tag: Box, to: Box): Box => {
+  const left = to.x + to.w / 2 < tag.x + tag.w / 2;
+  return { x: left ? tag.x - 2 : tag.x + tag.w - 2, y: tag.y + tag.h * 0.35, w: 4, h: 4 };
+};
+
 /** The hop as drawn: the box the arrow leaves, the one it reaches, and whether the torch stays where it is (the thing to
  * tap is inside what's lit, so the arrow comes from the tag instead). */
 interface HopAt {
   from: Box;
   to: Box;
   inner: boolean;
+  /** The tag's middle, for an arrow from its side to bow away from. */
+  away?: { x: number; y: number };
   key: string;
 }
 
@@ -83,7 +94,6 @@ export function TourLayer({
   progress,
   reduced,
   hop,
-  trail,
   onHopShown,
   onBack,
   onNext,
@@ -101,8 +111,6 @@ export function TourLayer({
   reduced: boolean;
   /** On the way to the next stop: what's being pointed at. */
   hop: HopView | null;
-  /** What the stop before lit, on this same screen: a dotted trail runs from it. */
-  trail: string[] | null;
   /** The hop has been pointed out (or there was nothing to point at): the tour can move on. */
   onHopShown: () => void;
   onBack: () => void;
@@ -231,28 +239,22 @@ export function TourLayer({
         const to = boxIn(target, el);
         const spot = atRef.current?.spot;
         const inner = !hop.elsewhere && !!spot && contains(spot, { x: to.x + to.w / 2, y: to.y + to.h / 2 });
-        const from = inner && tag.current ? boxIn(tag.current, el) : (litBox(el, hop.from, lim) ?? spot ?? to);
-        setHopAt({ from, to, inner, key: hop.target });
+        // From what was lit, unless that holds the target too (the arrow would point back into itself): then the torch's
+        // spot, or failing that the tag.
+        const mid = { x: to.x + to.w / 2, y: to.y + to.h / 2 };
+        const lit = litBox(el, hop.from, lim);
+        const outside = (b: Box | null | undefined) => (b && !contains(b, mid) ? b : null);
+        const plain = inner ? null : (outside(lit) ?? outside(spot));
+        const t = !plain && tag.current ? boxIn(tag.current, el) : null;
+        const from = plain ?? (t ? tagSide(t, to) : to);
+        setHopAt({ from, to, inner, away: t ? { x: t.x + t.w / 2, y: t.y + t.h / 2 } : undefined, key: hop.target });
         if (!inner) setHopSpot(padded(to, el.clientWidth));
-        // The arrow and its head take this long to draw; a moment to see them, then on.
-        later(() => shownRef.current(), reduced ? 650 : inner ? 1050 : 1250);
+        // The arrow and its head take this long to draw (or, without one, the torch to get there); a moment, then on.
+        later(() => shownRef.current(), reduced ? 650 : !hop.arrow ? 900 : inner ? 1050 : 1250);
       }, wait);
     }, hop.settle);
     return () => timers.forEach((id) => window.clearTimeout(id));
   }, [hop, phase, root, reduced]);
-
-  // A dotted trail from what the stop before lit on this screen, once the torch has moved and the page has scrolled.
-  const [trailFrom, setTrailFrom] = useState<{ from: Box; tag: Box | null } | null>(null);
-  useEffect(() => {
-    setTrailFrom(null);
-    const el = root.current;
-    if (!trail || phase !== 'on' || !el) return;
-    const id = window.setTimeout(() => {
-      const from = litBox(el, trail, limits(el, top.current));
-      if (from) setTrailFrom({ from, tag: tag.current ? boxIn(tag.current, el) : null });
-    }, settled(650));
-    return () => window.clearTimeout(id);
-  }, [trail, stop, phase, root]);
 
   const shown = phase === 'on' && at;
   // On a hop elsewhere the torch goes to the thing to tap and the tag steps back; on one inside what's lit, both stay.
@@ -278,9 +280,8 @@ export function TourLayer({
       ) : null}
       {shown ? (
         <svg className="tr-marks" aria-hidden="true">
-          {!hop && trailFrom ? <Trail key={`trail-${stop}`} from={trailFrom.from} to={at.spot} avoid={trailFrom.tag} screen={screen} /> : null}
-          {hopAt ? (
-            <Arrow key={`hop-${hopAt.key}`} from={hopAt.from} to={hopAt.to} screen={screen} delay={hopAt.inner ? 0 : 0.25} />
+          {hopAt && hop?.arrow ? (
+            <Arrow key={`hop-${hopAt.key}`} from={hopAt.from} to={hopAt.to} screen={screen} away={hopAt.away} delay={hopAt.inner ? 0 : 0.25} />
           ) : null}
         </svg>
       ) : null}

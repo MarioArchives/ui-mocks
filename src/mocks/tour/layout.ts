@@ -31,6 +31,8 @@ export interface Limits {
   top: number;
   bottom: number;
   width: number;
+  /** The foot of the screen the tour is over: no light goes past it (the tour's dock is under it). */
+  floor: number;
 }
 
 /** Light around an element. */
@@ -145,7 +147,7 @@ function spotAt(lits: Lit[], view: View | null, s: number, lim: Limits, growTop:
   const x0 = clamp(u.x - PAD, SIDE, lim.width - SIDE);
   const x1 = clamp(u.x + u.w + PAD, SIDE, lim.width - SIDE);
   let y0 = u.y - PAD - growTop;
-  let y1 = u.y + u.h + PAD;
+  let y1 = Math.min(u.y + u.h + PAD, lim.floor - 3);
   if (view) {
     y0 = Math.max(y0, view.top);
     y1 = Math.min(y1, view.top + view.h);
@@ -221,8 +223,10 @@ function fitWith(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, 
   return null;
 }
 
-/** Last resort on a short screen: the element at the top, the tag under it as far as it can go, and the spot cut
- * short where the tag's twine begins, so nothing lit hides behind the tag. */
+/** Last resort on a short screen: the element at the top, the tag under it as far down as it can go and the spot cut
+ * short where the tag's twine begins, so nothing lit hides behind the tag. When even that would push the tag off the
+ * foot of the screen (the element sits low, on a sheet that doesn't scroll), the tag goes above it turned over, as high
+ * as it can, and the spot's top is cut down to just under its knot instead. */
 function squeeze(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, lim: Limits, growTop: number): Placement {
   const sc = lits.find((l) => l.scroller)?.scroller ?? null;
   const view = sc ? viewOf(sc, root) : null;
@@ -232,8 +236,14 @@ function squeeze(root: HTMLElement, lits: Lit[], tag: { w: number; h: number }, 
     s = Math.round(clamp(scrolled.y - PAD - growTop - under(view, lim), 0, view.max));
   }
   const full = spotAt(lits, view, s, lim, growTop);
-  const lowest = Math.max(lim.top + 60, lim.bottom - tag.h);
-  const spot = { ...full, h: Math.max(48, Math.min(full.h, lowest - BELOW - full.y)) };
   const scroll = view && Math.abs(s - view.now) > 1 ? { el: view.el, top: s } : null;
-  return hangBelow(spot, tag, lim, scroll, Math.max(lowest, spot.y + spot.h + BELOW));
+  const lowest = Math.max(lim.top + 60, lim.bottom - tag.h);
+  const below = { ...full, h: Math.max(48, Math.min(full.h, lowest - BELOW - full.y)) };
+  const belowTop = Math.max(lowest, below.y + below.h + BELOW);
+  const top = roomAbove(tag, lim);
+  if (belowTop + tag.h > lim.bottom + 2 && full.y + full.h - top >= 40) {
+    const y = Math.max(full.y, top);
+    return hangAbove({ ...full, y, h: full.y + full.h - y }, tag, lim, scroll);
+  }
+  return hangBelow(below, tag, lim, scroll, belowTop);
 }

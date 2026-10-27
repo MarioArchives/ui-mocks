@@ -194,13 +194,11 @@ snap-root, snap-body { display: block; }
 .tr-tack::after { content: ''; position: absolute; left: 5.5px; top: 5.5px; width: 3.4px; height: 3.4px; border-radius: 50%; background: var(--white); opacity: 0.65; }
 .tr-ht--tour { z-index: 3; pointer-events: auto; transition: left 0.6s var(--glide), top 0.6s var(--glide); }
 .tr-tour.is-jump .tr-spot, .tr-tour.is-jump .tr-cord, .tr-tour.is-jump .tr-tack, .tr-tour.is-jump .tr-ht--tour { transition: none; }
-/* The red pen (Marks.tsx): arrows and a dotted trail, drawn as if by hand. */
+/* The red pen (Marks.tsx): arrows, drawn as if by hand. */
 .tr-marks { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.tr-pen__ink, .tr-pen__halo, .tr-pen__reveal { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tr-pen__ink, .tr-pen__halo { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tr-pen__ink { stroke: var(--marker); stroke-width: 3; }
 .tr-pen__halo { stroke: var(--marker-halo); stroke-width: 7; }
-.tr-pen__reveal { stroke: #fff; stroke-width: 16; }
-.tr-pen__dots { stroke-dasharray: 0.1 10; }
 .tr-pen__draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tr-draw var(--dur, 0.5s) cubic-bezier(0.35, 0.1, 0.3, 1) var(--delay, 0s) forwards; }
 @keyframes tr-draw { to { stroke-dashoffset: 0; } }
 

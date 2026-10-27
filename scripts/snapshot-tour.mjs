@@ -16,7 +16,8 @@
 // --dry drives the demo without writing anything, to keep the game's own screenshots at another --size.
 //
 // Three sessions, since every reload resets the demo: the specimen night (Missions, Map, Standings, Log book, My file,
-// Alex's file and Form 3 through to an upheld charge), a dismissed charge, and the case still sealed before it opens.
+// Alex's file and Form 3 through to an upheld charge), a dismissed charge and then a tip-off to the police, and the
+// case still sealed before it opens.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -453,7 +454,10 @@ async function specimenNight() {
   }
 }
 
-async function wrongCharge() {
+/** A dismissed charge on Alex, then (on his file still) Maya, a trusted confidant, tipping off the police about him:
+ * the phone in the app bar, who to tip off, what they've been up to, sent, and the tip in the log book. A session of its
+ * own, so the tip touches no other screen. */
+async function wrongChargeAndTip() {
   const b = await launch();
   try {
     await signIn(b, SPECIMEN);
@@ -463,6 +467,27 @@ async function wrongCharge() {
     await fileCharge(b);
     await sleep(400);
     await keep(b, 'wrong', { tags: [['toast', '.toast'], ['form3', 'ul.pf-accuse', 'Form 3']] });
+
+    // Let the toast go, then the tip line.
+    await sleep(6000);
+    await b.ev('scrollTo(0, 0)');
+    await b.click('.tipline');
+    await sleep(1200);
+    await keep(b, 'tip-pick', { tags: [['tip-pick', '.sheet .tipoff-pick'], ['tip-alex', '.sheet .tipoff-pick__who', 'Alex']] });
+    await b.click('.tipoff-pick__who', 'Alex');
+    await sleep(1000);
+    await b.ev(`document.querySelector('.sheet textarea')?.focus()`);
+    await b.type('seen slipping something into Sam’s drink');
+    await sleep(600);
+    await b.ev(`document.activeElement?.blur()`);
+    await sleep(300);
+    await keep(b, 'tip-note', { tags: [['tip-who', '.sheet .tipoff-who'], ['tip-field', '.sheet .field'], ['tip-send', '.sheet .btn--danger']] });
+    await b.click('.sheet .btn--danger');
+    await sleep(1200);
+    await keep(b, 'tip-sent', { tags: [['toast', '.toast'], ['tipline', '.tipline']] });
+    await b.ev(TIDY);
+    await route(b, '#/feed', 2500);
+    await keep(b, 'tip-logbook', { tags: [['tip-entry', '.tl__chapter:not(.tl__shut) .cf-strung > li', 'tipped off']] });
   } finally {
     b.close();
   }
@@ -587,7 +612,7 @@ function shadowCss(css, cssUrls) {
 
 log(`snapshotting ${BASE} at ${WIDTH}×${HEIGHT}`);
 await specimenNight();
-await wrongCharge();
+await wrongChargeAndTip();
 await sealed();
 if (DRY) process.exit(0);
 mkdirSync(SNAP, { recursive: true });

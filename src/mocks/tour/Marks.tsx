@@ -1,9 +1,8 @@
 // The tour's red pen, as on the game's map (its "next?" arrow): a curved arrow to where the tour goes next (a folder
-// tab, a tab at the foot, a face, a button) and a dotted trail from one spot to the next on the same screen. Each is
-// drawn as if by hand (stroke-dashoffset); with reduced motion it is all there at once (tour.css). Every stroke is red
-// over a pale halo, so it reads on the dark and on paper alike. Nothing is written, and nothing drawn round what's lit:
-// the torch does that.
-import { useId, type CSSProperties } from 'react';
+// tab, a tab at the foot, a face, a button). It is drawn as if by hand (stroke-dashoffset); with reduced motion it is
+// there at once (tour.css). Every stroke is red over a pale halo, so it reads on the dark and on paper alike. Nothing is
+// written, and nothing drawn round what's lit: the torch does that.
+import type { CSSProperties } from 'react';
 import type { Box } from './layout';
 
 export interface Pt {
@@ -50,23 +49,21 @@ function edge(b: Box, p: Pt, gap: number): Pt {
   return { x: c.x + dx * s + (dx / len) * gap, y: c.y + dy * s + (dy / len) * gap };
 }
 
-/** Whether the curve p0–c–p1 stays on the screen and clear of `avoid` (the tag), sampled along its length. */
-function clear(p0: Pt, c: Pt, p1: Pt, screen: { w: number; h: number }, avoid: Box | null): boolean {
+/** Whether the curve p0–c–p1 stays on the screen, sampled along its length. */
+function onScreen(p0: Pt, c: Pt, p1: Pt, screen: { w: number; h: number }): boolean {
   for (let t = 0; t <= 1.0001; t += 0.04) {
     const u = 1 - t;
     const x = u * u * p0.x + 2 * u * t * c.x + t * t * p1.x;
     const y = u * u * p0.y + 2 * u * t * c.y + t * t * p1.y;
     if (x < 3 || x > screen.w - 3 || y < 3 || y > screen.h - 3) return false;
-    if (avoid && x > avoid.x - 8 && x < avoid.x + avoid.w + 8 && y > avoid.y - 8 && y < avoid.y + avoid.h + 8) return false;
   }
   return true;
 }
 
-/**
- * A curved arrow from box `a` to box `b`: the shaft and the head. It bows towards the middle of the screen, or round
- * `avoid` (the tag) when the straight way would cross it; null when there's no way round that stays on the screen.
- */
-export function arrowPaths(a: Box, b: Box, screen: { w: number; h: number }, avoid: Box | null = null): { shaft: string; head: string } | null {
+/** A curved arrow from box `a` to box `b`: the shaft and the head, bowed towards the middle of the screen, or away from
+ * `away` (the tag, for an arrow setting off from its side), or the other way if that keeps it on the screen; null when
+ * neither does. */
+export function arrowPaths(a: Box, b: Box, screen: { w: number; h: number }, away?: Pt): { shaft: string; head: string } | null {
   const p0 = edge(a, center(b), 6);
   const p1 = edge(b, center(a), 9);
   const dx = p1.x - p0.x;
@@ -76,7 +73,8 @@ export function arrowPaths(a: Box, b: Box, screen: { w: number; h: number }, avo
   // The bow: perpendicular to the line, first on whichever side faces the middle of the screen.
   let nx = -dy / len;
   let ny = dx / len;
-  if ((screen.w / 2 - mid.x) * nx + (screen.h / 2 - mid.y) * ny < 0) {
+  const toward = away ? { x: 2 * mid.x - away.x, y: 2 * mid.y - away.y } : { x: screen.w / 2, y: screen.h / 2 };
+  if ((toward.x - mid.x) * nx + (toward.y - mid.y) * ny < 0) {
     nx = -nx;
     ny = -ny;
   }
@@ -85,12 +83,7 @@ export function arrowPaths(a: Box, b: Box, screen: { w: number; h: number }, avo
     { x: mid.x + nx * bow, y: mid.y + ny * bow },
     { x: mid.x - nx * bow, y: mid.y - ny * bow },
   ];
-  if (avoid) {
-    for (const x of [avoid.x - 40, avoid.x + avoid.w + 40, avoid.x - 90, avoid.x + avoid.w + 90, avoid.x - 150, avoid.x + avoid.w + 150]) {
-      tries.push({ x, y: mid.y }, { x, y: p1.y }, { x, y: p0.y });
-    }
-  }
-  const c = tries.find((t) => clear(p0, t, p1, screen, avoid));
+  const c = tries.find((t) => onScreen(p0, t, p1, screen));
   if (!c) return null;
   // The head: two strokes back from the tip along the curve's last direction.
   const tx = p1.x - c.x;
@@ -121,34 +114,14 @@ function Stroke({ d, delay, dur }: { d: string; delay: number; dur?: number }) {
   );
 }
 
-/** A curved arrow from one box to another. */
-export function Arrow({ from, to, screen, delay = 0 }: { from: Box; to: Box; screen: { w: number; h: number }; delay?: number }) {
-  const a = arrowPaths(from, to, screen);
+/** A curved arrow from one box to another (bowed away from `away`, when given). */
+export function Arrow({ from, to, screen, away, delay = 0 }: { from: Box; to: Box; screen: { w: number; h: number }; away?: Pt; delay?: number }) {
+  const a = arrowPaths(from, to, screen, away);
   if (!a) return null;
   return (
     <>
       <Stroke d={a.shaft} delay={delay} dur={0.45} />
       <Stroke d={a.head} delay={delay + 0.42} dur={0.16} />
-    </>
-  );
-}
-
-/** A dotted trail from one spot to the next on the same screen, revealed as if drawn, with a head; round the tag, or
- * not at all when it can't get round it. */
-export function Trail({ from, to, avoid, screen, delay = 0 }: { from: Box; to: Box; avoid: Box | null; screen: { w: number; h: number }; delay?: number }) {
-  const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const a = arrowPaths(from, to, screen, avoid);
-  if (!a) return null;
-  return (
-    <>
-      <mask id={`${id}-m`} maskUnits="userSpaceOnUse" x="0" y="0" width={screen.w} height={screen.h}>
-        <path d={a.shaft} pathLength={1} className="tr-pen__reveal tr-pen__draw" style={at(delay, 0.5)} />
-      </mask>
-      <g mask={`url(#${id}-m)`}>
-        <path d={a.shaft} className="tr-pen__halo tr-pen__dots" />
-        <path d={a.shaft} className="tr-pen__ink tr-pen__dots" />
-      </g>
-      <Stroke d={a.head} delay={delay + 0.48} dur={0.16} />
     </>
   );
 }

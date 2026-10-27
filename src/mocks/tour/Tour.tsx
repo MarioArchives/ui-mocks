@@ -367,6 +367,7 @@ function Frame() {
           phase={run.phase}
           first={run.stop === run.from}
           last={run.stop === run.to}
+          progress={{ at: run.stop - run.from + 1, of: run.to - run.from + 1 }}
           reduced={reduced}
           hop={hopView}
           trail={run.trail ?? null}

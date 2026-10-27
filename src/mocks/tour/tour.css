@@ -22,6 +22,10 @@ snap-root, snap-body { display: block; }
   --marker-deep: #9b2622;
   --marker-halo: rgba(241, 240, 236, 0.85);
   --glass: rgba(255, 255, 255, 0.25);
+  /* the tour's foot: its progress and Skip, under the screen */
+  --tr-dock-h: calc(48px + env(safe-area-inset-bottom, 0px));
+  --track: rgba(239, 233, 214, 0.2);
+  --rule-dark: rgba(239, 233, 214, 0.14);
   --deep-shadow: rgba(0, 0, 0, 0.55);
   --white: #fff;
   position: fixed; inset: 0; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; overflow: hidden;
@@ -192,7 +196,7 @@ snap-root, snap-body { display: block; }
 .tr-tack::after { content: ''; position: absolute; left: 5.5px; top: 5.5px; width: 3.4px; height: 3.4px; border-radius: 50%; background: var(--white); opacity: 0.65; }
 .tr-ht--tour { z-index: 3; pointer-events: auto; transition: left 0.6s var(--glide), top 0.6s var(--glide); }
 .tr-tour.is-jump .tr-spot, .tr-tour.is-jump .tr-cord, .tr-tour.is-jump .tr-tack, .tr-tour.is-jump .tr-ht--tour { transition: none; }
-/* The red pen (Marks.tsx): loops, arrows, a dotted trail and a word or two, drawn as if by hand. */
+/* The red pen (Marks.tsx): arrows, a dotted trail and a word or two, drawn as if by hand. */
 .tr-marks { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .tr-marks--over { z-index: 4; }
 .tr-pen__ink, .tr-pen__halo, .tr-pen__reveal { fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -215,40 +219,32 @@ snap-root, snap-body { display: block; }
 .tr-tour.is-gone .tr-black { opacity: 0.96; animation: tr-up 0.26s ease 0.36s both; }
 @keyframes tr-down { from { opacity: 0; } }
 @keyframes tr-up { from { opacity: 0.96; } to { opacity: 0; } }
-/* Over the status bar: the way out, and the badge saying none of this is real. When the torch is on the app bar the
-   badge steps down under the case number, out of its light. */
+/* Over the status bar: the badge saying none of this is real. When the torch is on the app bar it steps down under the
+   case number, out of its light. */
 .tr-strip { position: absolute; z-index: 6; left: 0; right: 0; top: calc(var(--safe-top) + 4px); height: 30px; animation: tr-down 0.3s ease both; }
 .tr-tour.is-gone .tr-strip { opacity: 0; transition: opacity 0.2s; }
-.tr-end {
-  position: absolute; left: 8px; top: 0; height: 30px; padding: 0 11px; border: 1.5px solid rgba(239, 233, 214, 0.55); border-radius: 15px; background: rgba(0, 0, 0, 0.35);
-  color: var(--room-text); cursor: pointer; font: 700 10.5px/1 var(--mono); letter-spacing: 1px; text-transform: uppercase;
-}
-.tr-end:focus-visible { outline: 2px solid var(--room-text); outline-offset: 2px; }
 .tr-specimen {
   position: absolute; left: 50%; top: 4px; padding: 2px 8px; border: 2.5px solid var(--warn-on-dark); color: var(--warn-on-dark); transform: translateX(-50%) rotate(-3deg);
   font: 400 12px/1.2 var(--display); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; transition: top 0.4s var(--glide), left 0.4s var(--glide);
 }
 .tr-strip.is-low .tr-specimen { left: 82px; top: 52px; }
-/* The parts of the tour under the badge, the one you're in ringed in red pen, the ones behind you fainter. Only where
-   there's height to spare; it steps aside when the torch is on the app bar. */
-.tr-sections {
-  position: absolute; left: 0; right: 0; top: 36px; display: flex; justify-content: center; gap: min(11px, 2.4vw); margin: 0; padding: 0 8px; list-style: none;
-  font: 700 min(17px, 4.3vw)/1 var(--hand); color: var(--room-text); white-space: nowrap; transition: opacity 0.3s;
+/* At the foot, under the screen while the tour is on (the screen moves up to make room, its tab bar too, so nothing the
+   torch lights is ever under it): how far through the tour you are, a segment a stop, and Skip. */
+.tr-app.is-touring { bottom: var(--tr-dock-h); --safe-bottom: 0px; }
+.tr-dock {
+  position: fixed; z-index: 6; left: 0; right: 0; bottom: 0; max-width: 480px; height: var(--tr-dock-h); margin: 0 auto; box-sizing: border-box;
+  display: flex; align-items: center; gap: 14px; padding: 0 10px env(safe-area-inset-bottom, 0px) 16px;
+  background: var(--room); border-top: 1px solid var(--rule-dark); animation: tr-down 0.3s ease both;
 }
-.tr-sections li { position: relative; opacity: 0.8; }
-.tr-sections li.is-past { opacity: 0.58; }
-.tr-sections li.is-on { opacity: 1; }
-.tr-sections__ring { position: absolute; left: -8px; top: -7px; width: calc(100% + 16px); max-width: none; height: calc(100% + 13px); overflow: visible; }
-.tr-sections__ring path { vector-effect: non-scaling-stroke; }
-.tr-sections__ring .tr-pen__ink { stroke-width: 2.4; }
-.tr-sections__ring .tr-pen__halo { stroke-width: 5; }
-.tr-strip.is-low .tr-sections { opacity: 0; }
-@media (min-height: 700px) {
-  .tr-strip { height: 60px; }
+.tr-tour.is-gone .tr-dock { opacity: 0; transition: opacity 0.2s; }
+.tr-progress { flex: 1; display: flex; gap: 3px; height: 6px; }
+.tr-progress span { flex: 1; border-radius: 3px; background: var(--track); transition: background-color 0.3s ease; }
+.tr-progress span.is-done, .tr-progress span.is-on { background: var(--pin-gold); }
+.tr-skip {
+  flex: none; min-height: 36px; padding: 0 16px; border: 1.5px solid rgba(239, 233, 214, 0.55); border-radius: 18px; background: transparent;
+  color: var(--room-text); cursor: pointer; font: 700 10.5px/1 var(--mono); letter-spacing: 1px; text-transform: uppercase;
 }
-@media (max-height: 699px) {
-  .tr-sections { display: none; }
-}
+.tr-skip:focus-visible { outline: 2px solid var(--room-text); outline-offset: 2px; }
 .tr-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Reduced motion: nothing glides or fades; the spot, the tag and the tabs jump. (base.css only shortens transitions to
@@ -258,9 +254,4 @@ snap-root, snap-body { display: block; }
   .tr-app.is-peek .tr-pane--missions, .tr-app.is-peek .tr-pane--logbook { animation: none; }
   .tr-pen__draw { animation: none; stroke-dashoffset: 0; }
   .tr-pen__label { animation: none; opacity: 1; }
-}
-
-/* A narrow phone: the badge moves right of centre so it clears the way out. */
-@media (max-width: 370px) {
-  .tr-specimen { left: calc(50% + 14px); }
 }

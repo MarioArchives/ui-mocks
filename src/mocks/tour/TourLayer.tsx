@@ -1,15 +1,15 @@
 // The tour over the app: everything dark but a torch's spot on the stop's element, a kraft tag tied to a brass tack on
-// it (hanging under it, or turned over above it so the twine never crosses the tag), the SPECIMEN NIGHT badge, the
-// parts of the tour with this one circled, and a way out at the top. The spot, the twine, the tacks and the tag glide
-// from stop to stop (or jump, with reduced motion); the tag swings a little as it lands. The red pen (Marks.tsx) loops
-// what's lit once the torch is on it, trails a dotted line from the last spot on the same screen, and on the way to
-// somewhere else points at each thing you'd tap (a hop), the torch going with it.
+// it (hanging under it, or turned over above it so the twine never crosses the tag), the SPECIMEN NIGHT badge at the
+// top, and at the foot a progress bar and Skip. The spot, the twine, the tacks and the tag glide from stop to stop (or
+// jump, with reduced motion); the tag swings a little as it lands. The red pen (Marks.tsx) trails a dotted line from
+// the last spot on the same screen, and on the way to somewhere else draws an arrow to each thing you'd tap (a hop),
+// the torch going with it.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { HangTag, Tack } from './HangTag';
 import { place, selectorOf, type Box, type Limits, type Placement } from './layout';
-import { Arrow, boxIn, contains, Loop, Trail, union, within, type Pt } from './Marks';
+import { Arrow, boxIn, contains, Trail, union, within, type Pt } from './Marks';
 import { ArrowIcon, CheckIcon, TagText } from './screens';
-import { SECTIONS, STOPS, TILT } from './stops';
+import { STOPS, TILT } from './stops';
 
 export type Phase = 'in' | 'on' | 'out' | 'gone';
 
@@ -32,9 +32,6 @@ function low(spot: Box, width: number): boolean {
   const hits = (x: number, y: number, w: number, h: number) => spot.x < x + w && spot.x + spot.w > x && spot.y < y + h && spot.y + spot.h > y;
   return hits(width / 2 - 80, 0, 160, 40) && !hits(4, 46, 156, 38);
 }
-
-/** The pen's ring round the part of the tour you're in, on a 100 × 40 grid stretched to the word. */
-const RING = 'M14 6 C 40 1, 78 2, 93 12 C 101 20, 92 33, 62 36 C 34 39, 6 34, 4 22 C 3 12, 18 5, 40 4 L 58 5';
 
 /** The tag's width: the stop's own, else the mockup's 220, never wider than the phone allows. */
 const tagWidth = (stop: number, phone: number) => Math.min(STOPS[stop]!.width ?? 220, phone - 24);
@@ -88,6 +85,7 @@ export function TourLayer({
   phase,
   first,
   last,
+  progress,
   reduced,
   hop,
   trail,
@@ -103,6 +101,8 @@ export function TourLayer({
   first: boolean;
   /** The run's last stop: Next says Done. */
   last: boolean;
+  /** How far through the run this stop is: the `at`th of `of` (a part of the tour counts only its own stops). */
+  progress: { at: number; of: number };
   reduced: boolean;
   /** On the way to the next stop: what's being pointed at. */
   hop: HopView | null;
@@ -239,7 +239,7 @@ export function TourLayer({
         const from = inner && tag.current ? boxIn(tag.current, el) : (litBox(el, hop.from, lim) ?? spot ?? to);
         setHopAt({ from, to, inner, key: hop.target });
         if (!inner) setHopSpot(padded(to, el.clientWidth));
-        // The arrow, its head, the ring and the words take this long to draw; a moment to see them, then on.
+        // The arrow, its head and the words take this long to draw; a moment to see them, then on.
         later(() => shownRef.current(), reduced ? 650 : inner ? 1050 : 1250);
       }, wait);
     }, hop.settle);
@@ -279,7 +279,6 @@ export function TourLayer({
   // On a hop elsewhere the torch goes to the thing to tap and the tag steps back; on one inside what's lit, both stay.
   const away = !!hop && !(hopAt?.inner ?? false);
   const spot = (hop && hopSpot) || at?.spot;
-  const sectionAt = SECTIONS.indexOf(s.section);
   const nudgePt: Pt | null = nudge ? { x: nudge.label.x, y: nudge.label.y + 18 } : null;
 
   return (
@@ -302,13 +301,9 @@ export function TourLayer({
       ) : null}
       {shown ? (
         <svg className="tr-marks" aria-hidden="true">
-          {hop ? null : <Loop key={`loop-${stop}`} box={at.spot} seed={stop} screen={screen} delay={trail ? 1.05 : jump ? 0.2 : 0.55} />}
           {!hop && trailFrom ? <Trail key={`trail-${stop}`} from={trailFrom.from} to={at.spot} avoid={trailFrom.tag} screen={screen} /> : null}
           {hopAt ? (
-            <g key={`hop-${hopAt.key}`}>
-              <Arrow from={hopAt.from} to={hopAt.to} screen={screen} label={hop?.label} delay={hopAt.inner ? 0 : 0.25} />
-              <Loop box={hopAt.to} seed={stop + 31} screen={screen} delay={hopAt.inner ? 0.35 : 0.4} />
-            </g>
+            <Arrow key={`hop-${hopAt.key}`} from={hopAt.from} to={hopAt.to} screen={screen} label={hop?.label} delay={hopAt.inner ? 0 : 0.25} />
           ) : null}
         </svg>
       ) : null}
@@ -363,26 +358,28 @@ export function TourLayer({
       ) : null}
       <span className="tr-black" aria-hidden="true" />
       <div className={`tr-strip${spot && low(spot, screen.w) ? ' is-low' : ''}`} ref={top}>
-        <button type="button" className="tr-end" onClick={onEnd}>
-          End tour
-        </button>
         <span className="tr-specimen">Specimen night</span>
-        <ol className="tr-sections" aria-label="Parts of the tour">
-          {SECTIONS.map((name, i) => (
-            <li key={name} className={i === sectionAt ? 'is-on' : i < sectionAt ? 'is-past' : undefined} aria-current={i === sectionAt ? 'step' : undefined}>
-              {name}
-              {i === sectionAt ? (
-                <svg className="tr-sections__ring" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-                  <path d={RING} pathLength={1} className="tr-pen__halo tr-pen__draw" />
-                  <path d={RING} pathLength={1} className="tr-pen__ink tr-pen__draw" />
-                </svg>
-              ) : null}
-            </li>
+      </div>
+      <div className="tr-dock">
+        <div
+          className="tr-progress"
+          role="progressbar"
+          aria-label="The tour"
+          aria-valuemin={1}
+          aria-valuemax={progress.of}
+          aria-valuenow={progress.at}
+          aria-valuetext={`Stop ${progress.at} of ${progress.of}`}
+        >
+          {Array.from({ length: progress.of }, (_, i) => (
+            <span key={i} className={i < progress.at - 1 ? 'is-done' : i === progress.at - 1 ? 'is-on' : undefined} />
           ))}
-        </ol>
+        </div>
+        <button type="button" className="tr-skip" onClick={onEnd}>
+          Skip
+        </button>
       </div>
       <p className="tr-sr" aria-live="polite">
-        {hop ? `On the way: ${hop.label.replace(/^→ /, '')}.` : shown ? `Stop ${stop + 1} of ${STOPS.length}: ${s.title}. Part ${sectionAt + 1} of ${SECTIONS.length}, ${s.section}.` : ''}
+        {hop ? `On the way: ${hop.label.replace(/^→ /, '')}.` : shown ? `Stop ${progress.at} of ${progress.of}: ${s.title}.` : ''}
       </p>
     </div>
   );

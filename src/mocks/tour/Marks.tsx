@@ -1,27 +1,14 @@
-// The tour's red pen, as on the game's map (its stop circles and the "next?" arrow): a marker loop round what the
-// torch has just lit, a curved arrow to where the tour goes next (a folder tab, a tab at the foot, a face, a button)
-// with a word or two in handwriting, a dotted trail from one spot to the next on the same screen, and a nudge towards
-// Next. Each is drawn as if by hand (stroke-dashoffset), a little off true; with reduced motion it is all there at once
-// (tour.css). Every stroke is red over a pale halo, and the handwriting deep red with a paper-coloured halo, so they
-// read on the dark and on paper alike.
+// The tour's red pen, as on the game's map (its "next?" arrow): a curved arrow to where the tour goes next (a folder
+// tab, a tab at the foot, a face, a button) with a word or two in handwriting, a dotted trail from one spot to the next
+// on the same screen, and a nudge towards Next. Each is drawn as if by hand (stroke-dashoffset); with reduced motion it
+// is all there at once (tour.css). Every stroke is red over a pale halo, and the handwriting deep red with a
+// paper-coloured halo, so they read on the dark and on paper alike. What's lit has only the torch: no pen round it.
 import { useId, type CSSProperties } from 'react';
 import type { Box } from './layout';
 
 export interface Pt {
   x: number;
   y: number;
-}
-
-/** A small seeded random, so a stop's loop wobbles the same way every time: returns ±amp. */
-function wobble(seed: number) {
-  let a = (Math.imul(seed + 1, 2654435761) >>> 0) || 1;
-  return (amp: number) => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((((t ^ (t >>> 14)) >>> 0) / 4294967296) * 2 - 1) * amp;
-  };
 }
 
 const n = (v: number) => Math.round(v * 10) / 10;
@@ -51,30 +38,6 @@ export function within(b: Box, top: number, bottom: number): Box {
 }
 
 export const contains = (b: Box, p: Pt) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
-
-/** A loop round `b`, `gap` outside it and inside the screen: a rounded oblong begun at the top left, a little off true,
- * its end running on past its start. */
-export function loopPath(b: Box, seed: number, screen: { w: number; h: number }, gap = 5): string {
-  const j = wobble(seed);
-  const x0 = Math.max(3, b.x - gap);
-  const x1 = Math.min(screen.w - 3, b.x + b.w + gap);
-  const y0 = Math.max(3, b.y - gap);
-  const y1 = Math.min(screen.h - 3, b.y + b.h + gap);
-  const r = Math.min(20, (x1 - x0) / 2, (y1 - y0) / 2);
-  const end = Math.min(x1 - r, x0 + r + 34 + j(8));
-  return [
-    `M${n(x0 + r + j(4))} ${n(y0 + j(2))}`,
-    `L${n(x1 - r + j(3))} ${n(y0 + j(2.5))}`,
-    `Q${n(x1 + j(1.5))} ${n(y0 + j(1))} ${n(x1 + j(1.5))} ${n(y0 + r + j(3))}`,
-    `L${n(x1 + j(2))} ${n(y1 - r + j(3))}`,
-    `Q${n(x1 + j(1))} ${n(y1 + j(1.5))} ${n(x1 - r + j(3))} ${n(y1 + j(1.5))}`,
-    `L${n(x0 + r + j(3))} ${n(y1 + j(2))}`,
-    `Q${n(x0 + j(1.5))} ${n(y1 + j(1))} ${n(x0 + j(1.5))} ${n(y1 - r + j(3))}`,
-    `L${n(x0 + j(2))} ${n(y0 + r + j(3))}`,
-    `Q${n(x0 + j(1))} ${n(y0 - 2)} ${n(x0 + r + 8)} ${n(y0 - 3 + j(1.5))}`,
-    `L${n(end)} ${n(y0 - 5 + j(2))}`,
-  ].join(' ');
-}
 
 /** Where `b`'s edge meets the line from its centre towards `p`, pushed out by `gap`. */
 function edge(b: Box, p: Pt, gap: number): Pt {
@@ -170,11 +133,6 @@ function Stroke({ d, delay, dur }: { d: string; delay: number; dur?: number }) {
       <path d={d} pathLength={1} className="tr-pen__ink tr-pen__draw" style={at(delay, dur)} />
     </>
   );
-}
-
-/** A marker loop round a box. */
-export function Loop({ box, seed, screen, delay = 0 }: { box: Box; seed: number; screen: { w: number; h: number }; delay?: number }) {
-  return <Stroke d={loopPath(box, seed, screen)} delay={delay} dur={0.55} />;
 }
 
 /** A curved arrow from one box to another, with its label by the far end. */

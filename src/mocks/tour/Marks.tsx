@@ -1,8 +1,8 @@
 // The tour's red pen, as on the game's map (its "next?" arrow): a curved arrow to where the tour goes next (a folder
-// tab, a tab at the foot, a face, a button) with a word or two in handwriting, a dotted trail from one spot to the next
-// on the same screen, and a nudge towards Next. Each is drawn as if by hand (stroke-dashoffset); with reduced motion it
-// is all there at once (tour.css). Every stroke is red over a pale halo, and the handwriting deep red with a
-// paper-coloured halo, so they read on the dark and on paper alike. What's lit has only the torch: no pen round it.
+// tab, a tab at the foot, a face, a button) and a dotted trail from one spot to the next on the same screen. Each is
+// drawn as if by hand (stroke-dashoffset); with reduced motion it is all there at once (tour.css). Every stroke is red
+// over a pale halo, so it reads on the dark and on paper alike. Nothing is written, and nothing drawn round what's lit:
+// the torch does that.
 import { useId, type CSSProperties } from 'react';
 import type { Box } from './layout';
 
@@ -109,20 +109,6 @@ export function arrowPaths(a: Box, b: Box, screen: { w: number; h: number }, avo
   };
 }
 
-/** Where a label goes by box `b`: to its right, else its left, below, above; inside the screen, under the strip. */
-export function labelAt(text: string, b: Box, screen: { w: number; h: number; top: number }): Pt & { w: number } {
-  const w = text.length * 10.4 + 6;
-  const fits = (x: number, y: number) => x >= 8 && x + w <= screen.w - 8 && y - 20 >= screen.top && y + 6 <= screen.h;
-  const tries = [
-    { x: b.x + b.w + 12, y: b.y + b.h / 2 + 8 },
-    { x: b.x - 12 - w, y: b.y + b.h / 2 + 8 },
-    { x: b.x + b.w / 2 - w / 2, y: b.y + b.h + 26 },
-    { x: b.x + b.w / 2 - w / 2, y: b.y - 12 },
-  ];
-  const hit = tries.find((t) => fits(t.x, t.y)) ?? tries[2]!;
-  return { x: Math.max(8, Math.min(screen.w - 8 - w, hit.x)), y: Math.max(screen.top + 20, Math.min(screen.h - 6, hit.y)), w };
-}
-
 const at = (delay: number, dur = 0.5) => ({ '--delay': `${delay}s`, '--dur': `${dur}s` }) as CSSProperties;
 
 /** One pen stroke: the halo, then the red, drawn together. */
@@ -135,32 +121,14 @@ function Stroke({ d, delay, dur }: { d: string; delay: number; dur?: number }) {
   );
 }
 
-/** A curved arrow from one box to another, with its label by the far end. */
-export function Arrow({
-  from,
-  to,
-  screen,
-  label,
-  delay = 0,
-}: {
-  from: Box;
-  to: Box;
-  screen: { w: number; h: number; top: number };
-  label?: string;
-  delay?: number;
-}) {
+/** A curved arrow from one box to another. */
+export function Arrow({ from, to, screen, delay = 0 }: { from: Box; to: Box; screen: { w: number; h: number }; delay?: number }) {
   const a = arrowPaths(from, to, screen);
-  const l = label ? labelAt(label, to, screen) : null;
   if (!a) return null;
   return (
     <>
       <Stroke d={a.shaft} delay={delay} dur={0.45} />
       <Stroke d={a.head} delay={delay + 0.42} dur={0.16} />
-      {l ? (
-        <text x={n(l.x)} y={n(l.y)} className="tr-pen__label" style={at(delay + 0.4)}>
-          {label}
-        </text>
-      ) : null}
     </>
   );
 }

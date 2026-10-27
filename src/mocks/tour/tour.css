@@ -17,9 +17,8 @@ snap-root, snap-body { display: block; }
   --scrim: rgba(13, 14, 15, 0.8);
   --torch: rgba(242, 239, 228, 0.28);
   --glide: cubic-bezier(0.45, 0.05, 0.2, 1);
-  /* the red pen, as on the game's map: the stroke, the handwriting, and the pale halo under both */
+  /* the red pen, as on the game's map: the stroke, and the pale halo under it */
   --marker: #c4302b;
-  --marker-deep: #9b2622;
   --marker-halo: rgba(241, 240, 236, 0.85);
   --glass: rgba(255, 255, 255, 0.25);
   /* the tour's foot: its progress and Skip, under the screen */
@@ -178,7 +177,6 @@ snap-root, snap-body { display: block; }
 }
 .tr-pen { position: absolute; z-index: 2; width: 220px; margin-left: -110px; color: var(--pen-red); pointer-events: none; text-align: center; animation: tr-rise 0.4s ease-out 0.5s both; }
 .tr-pen svg { display: block; width: 100%; height: 36px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
-.tr-pen span { display: block; margin-top: -6px; font: 700 30px/1 var(--hand); transform: rotate(-3deg); }
 @keyframes tr-rise { from { opacity: 0; transform: translateY(8px); } }
 /* The twine, the tacks and the tag: hidden while the lights go down or up, gliding with the spot between stops. */
 .tr-hang { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.3s ease; }
@@ -196,21 +194,15 @@ snap-root, snap-body { display: block; }
 .tr-tack::after { content: ''; position: absolute; left: 5.5px; top: 5.5px; width: 3.4px; height: 3.4px; border-radius: 50%; background: var(--white); opacity: 0.65; }
 .tr-ht--tour { z-index: 3; pointer-events: auto; transition: left 0.6s var(--glide), top 0.6s var(--glide); }
 .tr-tour.is-jump .tr-spot, .tr-tour.is-jump .tr-cord, .tr-tour.is-jump .tr-tack, .tr-tour.is-jump .tr-ht--tour { transition: none; }
-/* The red pen (Marks.tsx): arrows, a dotted trail and a word or two, drawn as if by hand. */
+/* The red pen (Marks.tsx): arrows and a dotted trail, drawn as if by hand. */
 .tr-marks { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.tr-marks--over { z-index: 4; }
 .tr-pen__ink, .tr-pen__halo, .tr-pen__reveal { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .tr-pen__ink { stroke: var(--marker); stroke-width: 3; }
 .tr-pen__halo { stroke: var(--marker-halo); stroke-width: 7; }
 .tr-pen__reveal { stroke: #fff; stroke-width: 16; }
 .tr-pen__dots { stroke-dasharray: 0.1 10; }
 .tr-pen__draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: tr-draw var(--dur, 0.5s) cubic-bezier(0.35, 0.1, 0.3, 1) var(--delay, 0s) forwards; }
-.tr-pen__label {
-  font: 700 22px/1 var(--hand); fill: var(--marker-deep); stroke: var(--print); stroke-width: 5px; paint-order: stroke; stroke-linejoin: round;
-  opacity: 0; animation: tr-ink 0.25s ease-out var(--delay, 0s) forwards;
-}
 @keyframes tr-draw { to { stroke-dashoffset: 0; } }
-@keyframes tr-ink { to { opacity: 1; } }
 
 /* The lights going down before the specimen night, and coming up after it. */
 .tr-black { position: absolute; inset: 0; z-index: 5; background: var(--room); opacity: 0; pointer-events: none; transition: opacity 0.26s ease; }
@@ -253,5 +245,4 @@ snap-root, snap-body { display: block; }
   .tr-app *, .tr-app *::before, .tr-app *::after { transition-property: none !important; }
   .tr-app.is-peek .tr-pane--missions, .tr-app.is-peek .tr-pane--logbook { animation: none; }
   .tr-pen__draw { animation: none; stroke-dashoffset: 0; }
-  .tr-pen__label { animation: none; opacity: 1; }
 }

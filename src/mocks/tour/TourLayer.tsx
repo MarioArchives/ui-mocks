@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { HangTag, Tack } from './HangTag';
 import { place, selectorOf, type Box, type Limits, type Placement } from './layout';
-import { Arrow, boxIn, contains, Trail, union, within, type Pt } from './Marks';
+import { Arrow, boxIn, contains, Trail, union, within } from './Marks';
 import { ArrowIcon, CheckIcon, TagText } from './screens';
 import { STOPS, TILT } from './stops';
 
@@ -19,6 +19,7 @@ export interface HopView {
   target: string;
   /** What was lit before it (names or selectors), for the arrow to start from. */
   from: string[];
+  /** What a screen reader hears on the way ("the Map"); nothing is written on the screen. */
   label: string;
   /** Wait this long first (the page turning to the hop's screen). */
   settle: number;
@@ -71,12 +72,6 @@ interface HopAt {
   to: Box;
   inner: boolean;
   key: string;
-}
-
-/** The nudge towards Next on a run's first stop: the button, and where its label goes. */
-interface Nudge {
-  button: Box;
-  label: Box;
 }
 
 export function TourLayer({
@@ -239,7 +234,7 @@ export function TourLayer({
         const from = inner && tag.current ? boxIn(tag.current, el) : (litBox(el, hop.from, lim) ?? spot ?? to);
         setHopAt({ from, to, inner, key: hop.target });
         if (!inner) setHopSpot(padded(to, el.clientWidth));
-        // The arrow, its head and the words take this long to draw; a moment to see them, then on.
+        // The arrow and its head take this long to draw; a moment to see them, then on.
         later(() => shownRef.current(), reduced ? 650 : inner ? 1050 : 1250);
       }, wait);
     }, hop.settle);
@@ -259,27 +254,10 @@ export function TourLayer({
     return () => window.clearTimeout(id);
   }, [trail, stop, phase, root]);
 
-  // On a run's first stop, a nudge towards Next once the tag has landed: written in Back's place (there's no Back yet),
-  // with a short arrow to the button.
-  const [nudge, setNudge] = useState<Nudge | null>(null);
-  useEffect(() => {
-    setNudge(null);
-    const el = root.current;
-    if (!first || phase !== 'on' || !at || !el) return;
-    const id = window.setTimeout(() => {
-      if (!go.current || !tag.current) return;
-      const button = boxIn(go.current, el);
-      const t = boxIn(tag.current, el);
-      setNudge({ button, label: { x: t.x + 16, y: button.y + button.h / 2 - 13, w: 36, h: 24 } });
-    }, settled(950));
-    return () => window.clearTimeout(id);
-  }, [first, phase, at, root, stop]);
-
   const shown = phase === 'on' && at;
   // On a hop elsewhere the torch goes to the thing to tap and the tag steps back; on one inside what's lit, both stay.
   const away = !!hop && !(hopAt?.inner ?? false);
   const spot = (hop && hopSpot) || at?.spot;
-  const nudgePt: Pt | null = nudge ? { x: nudge.label.x, y: nudge.label.y + 18 } : null;
 
   return (
     <div className={`tr-tour is-${phase}${jump ? ' is-jump' : ''}`}>
@@ -296,14 +274,13 @@ export function TourLayer({
             <path d="M20 12l-12 10 13 8" />
             <path d="M230 9l12 11-13 9" />
           </svg>
-          <span>swipe</span>
         </span>
       ) : null}
       {shown ? (
         <svg className="tr-marks" aria-hidden="true">
           {!hop && trailFrom ? <Trail key={`trail-${stop}`} from={trailFrom.from} to={at.spot} avoid={trailFrom.tag} screen={screen} /> : null}
           {hopAt ? (
-            <Arrow key={`hop-${hopAt.key}`} from={hopAt.from} to={hopAt.to} screen={screen} label={hop?.label} delay={hopAt.inner ? 0 : 0.25} />
+            <Arrow key={`hop-${hopAt.key}`} from={hopAt.from} to={hopAt.to} screen={screen} delay={hopAt.inner ? 0 : 0.25} />
           ) : null}
         </svg>
       ) : null}
@@ -348,14 +325,6 @@ export function TourLayer({
           </div>
         </HangTag>
       </div>
-      {shown && !hop && nudge && nudgePt ? (
-        <svg className="tr-marks tr-marks--over" aria-hidden="true">
-          <Arrow key={`nudge-${stop}`} from={nudge.label} to={nudge.button} screen={screen} />
-          <text x={nudgePt.x} y={nudgePt.y} className="tr-pen__label" style={{ ['--delay' as string]: '0.3s' }}>
-            tap
-          </text>
-        </svg>
-      ) : null}
       <span className="tr-black" aria-hidden="true" />
       <div className={`tr-strip${spot && low(spot, screen.w) ? ' is-low' : ''}`} ref={top}>
         <span className="tr-specimen">Specimen night</span>
@@ -379,7 +348,7 @@ export function TourLayer({
         </button>
       </div>
       <p className="tr-sr" aria-live="polite">
-        {hop ? `On the way: ${hop.label.replace(/^→ /, '')}.` : shown ? `Stop ${progress.at} of ${progress.of}: ${s.title}.` : ''}
+        {hop ? `On the way: ${hop.label}.` : shown ? `Stop ${progress.at} of ${progress.of}: ${s.title}.` : ''}
       </p>
     </div>
   );

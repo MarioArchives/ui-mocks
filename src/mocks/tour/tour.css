@@ -109,8 +109,7 @@ snap-root, snap-body { display: block; }
 .tr-ht__body {
   position: relative; display: flex; flex-direction: column; min-height: calc(var(--w, 210px) * 1.16); padding: 24px 15px 12px;
   background: linear-gradient(180deg, var(--glass), transparent 55%), var(--kraft); color: var(--manila-ink);
-  clip-path: polygon(26px 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%, 0 26px);
-  -webkit-mask: radial-gradient(circle at 50% 32px, transparent 7px, #000 7.6px); mask: radial-gradient(circle at 50% 32px, transparent 7px, #000 7.6px);
+  /* its outline, the clipped corners and the hole, is a clip-path set by HangTag.tsx */
 }
 .tr-ht__body > [role='dialog'] { flex: 1; display: flex; flex-direction: column; }
 /* Turned over, for a tag above what it's tied to: the shape, the hole and the rig mirrored, eyelet at the foot; the
@@ -118,8 +117,6 @@ snap-root, snap-body { display: block; }
 .tr-ht--flip { transform-origin: calc(50% + 2px) calc(100% + 20px); }
 .tr-ht--flip .tr-ht__body {
   padding: 14px 15px 24px;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 26px 100%, 0 calc(100% - 26px));
-  -webkit-mask: radial-gradient(circle at 50% calc(100% - 32px), transparent 7px, #000 7.6px); mask: radial-gradient(circle at 50% calc(100% - 32px), transparent 7px, #000 7.6px);
 }
 .tr-ht--flip .tr-ht__rig { top: auto; bottom: -40px; transform: scaleY(-1); }
 .tr-ht--flip .tr-ht__sec { margin-top: 2px; }

@@ -164,7 +164,7 @@ export const STOPS: Stop[] = [
     scene: 'search',
     via: [{ target: '.tr-pane--missions [data-tour="form3"] .cs-btn', label: 'type a charge' }],
     title: 'Name the mission',
-    text: 'Type any word from the mission you think they’re on, then tap it. All 68 are in the book.',
+    text: 'Type any word from the mission you think they’re on, then tap it. All 92 are in the book.',
     lit: ['cs-search', 'cs-hits'],
     core: ['cs-hits'],
   },

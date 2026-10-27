@@ -1,7 +1,8 @@
 // A kraft tag hanging upright on twine, as in the mockup's close-up of the eyelet: the knot tied on the cord just above
 // the tag with a short frayed end (1), the front strand over the top edge and down the face (2), the back strand going
 // down behind (3), the tag riding the top of the hole (4), and a card washer glued round a metal grommet (5). The body
-// is HTML (clipped corners and a masked hole); the rig over it is one SVG, so every tag hangs the same way at any size.
+// is HTML (clipped corners and a hole, both cut by its outline); the rig over it is one SVG, so every tag hangs the
+// same way at any size.
 // Turned over (`flip`), the shape and the rig are mirrored top to bottom, eyelet and knot at the foot, and the words
 // stay upright.
 import { useId, type CSSProperties, type ReactNode, type Ref } from 'react';
@@ -28,11 +29,34 @@ export function HangTag({
   return (
     <div className={`tr-ht${flip ? ' tr-ht--flip' : ''}${className ? ` ${className}` : ''}`} style={{ ...style, width, ['--w' as string]: `${width}px`, ['--rot' as string]: `${tilt}deg` }} ref={ref}>
       <div className="tr-ht__shape">
-        <div className="tr-ht__body">{children}</div>
+        <div className="tr-ht__body" style={{ clipPath: outline(flip) }}>
+          {children}
+        </div>
       </div>
       <Rig />
     </div>
   );
+}
+
+/**
+ * The tag's outline as one clip-path: the two clipped corners, and the hole (r 7, 32px in from the eyelet's edge) cut by
+ * a slit of no width from that edge to a ring of points round it. A CSS mask for the hole would be simpler, but under
+ * the shape's drop-shadow it leaves ghosts of the tag on the page in Chrome on some GPUs.
+ */
+function outline(flip: boolean): string {
+  const px = (v: number) => `${Math.round(v * 100) / 100}px`;
+  const x = (dx: number) => (dx ? `calc(50% ${dx < 0 ? '-' : '+'} ${px(Math.abs(dx))})` : '50%');
+  // From the edge nearest the eyelet: 0 is the top (or, turned over, the foot), going in.
+  const y = (d: number) => (flip ? `calc(100% - ${px(d)})` : px(d));
+  const ring = Array.from({ length: 25 }, (_, i) => {
+    const a = (i / 24) * 2 * Math.PI;
+    return `${x(7 * Math.sin(a))} ${y(32 - 7 * Math.cos(a))}`;
+  });
+  const hole = [`50% ${y(0)}`, ...ring, `50% ${y(0)}`];
+  const points = flip
+    ? ['0 0', '100% 0', '100% calc(100% - 26px)', 'calc(100% - 26px) 100%', ...hole, '26px 100%', '0 calc(100% - 26px)']
+    : ['26px 0', ...hole, 'calc(100% - 26px) 0', '100% 26px', '100% 100%', '0 100%', '0 26px'];
+  return `polygon(evenodd, ${points.join(', ')})`;
 }
 
 /** The twine and the eyelet, on a grid with the tag's top centre at 0,0 and the hole at 0,32. */

@@ -6,6 +6,7 @@
 @import '@fontsource/archivo/latin-400.css';
 @import '@fontsource/archivo/latin-500.css';
 @import '@fontsource/archivo/latin-600.css';
+@import '@fontsource/caveat/latin-600.css';
 
 :root {
   --room: #0d0e0f;
@@ -16,6 +17,7 @@
   --wall-shadow: #26282a;
   --walltext: #e9ebec;
   --rule: #a9adaf;
+  --chart: #a8adb0;
   --ink: #161718;
   --dot: #e2574c;
   --felt: #161816;
@@ -26,12 +28,20 @@
   --accent-hover: #125c59;
   --warn: #a3342a;
   --warn-on-dark: #e98679;
+  --suspect-deep: #7d241d;
   --manila: #e6cf98;
   --manila-tab: #d9bd7e;
   --manila-ink: #2a2116;
   --manila-sub: #5b4a33;
   --kraft: #c9a974;
   --kraft-line: #8e7550;
+  --kraft-back: #bd9c66;
+  /* inks dark enough to read on kraft */
+  --kraft-sub: #423625;
+  --kraft-good: #224224;
+  --kraft-bad: #671e18;
+  --kraft-warm: #503607;
+  --kraft-plain: #0f3f3b;
   --twine: #b59e78;
   --twine-dark: #a48c66;
   --eyelet-edge: #6f7477;
@@ -42,12 +52,21 @@
   --stamp-plain: #14544f;
   --stamp-warm: #7a520a;
   --pen-red: #c4302b;
+  --wax-hi: #e2574c;
+  --wax: #b23b30;
+  --wax-deep: #7d241d;
+  --bee-gold: #e5ac17;
   --print: #f1f0ec;
   --chart-paper: #f4ecd5;
+  --form: #fbf8ef;
+  --accent-tint: #d8ebe8;
+  --sh-tab: rgba(0, 0, 0, 0.35);
+  --sh-tag: rgba(42, 33, 22, 0.35);
   --silhouette: #8d9294;
   --paper: #f1f0ec;
 
   --mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --display: 'Archivo Black', 'Arial Black', system-ui, sans-serif;
   --body: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Caveat', 'Archivo', cursive;
 }

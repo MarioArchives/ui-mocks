@@ -7,6 +7,7 @@ is built into the game. Each mock is a plain front-end page with made-up data, n
 
 | Mock | Game | What to try |
 |---|---|---|
+| [The torch tour](https://marioarchives.github.io/ui-mocks/#/tour) (`#/tour`) | Mystery Pub Crawl | The new player's walkthrough while the case is still sealed: tap Take the tour on the tag tied to the sealed case file, and the tabs fill with a made-up specimen night, dark but for a torch on one thing at a time and a kraft tag on twine saying what it does. Twelve stops across Missions, Log book and My file: Next and Back on the tag, ← → on a keyboard, Escape or End tour to leave. Afterwards My file keeps "How tonight works": the whole tour again, or one part. `?stop=5` before the `#` opens that stop. |
 | [Swiping between screens](https://marioarchives.github.io/ui-mocks/#/swipe) (`#/swipe`) | Mystery Pub Crawl | Drag sideways between Missions, Log book and My file (or tap a tab) in five looks: side by side, pulling the top sheet off a pile, turning the page, panning across the evidence board, and a torch beam. The screens follow your finger and spring back if you let go early; Slow-mo plays the settling four times slower. |
 
 ## On your phone

@@ -1,4 +1,4 @@
-// The torch tour's seventeen stops, in order, and the five parts My file can start it at. Each stop names the tab it
+// The torch tour's nineteen stops, in order, and the five parts My file can start it at. Each stop names the tab it
 // happens on, the game screen shown there (a snapshot from snap/scenes.json, see scripts/snapshot-tour.mjs), the
 // elements the torch lights (by the data-tour names the snapshot stamped on them) and what the tag says. The words
 // follow what the snapshots show (Maya's specimen night in the game's demo) and the mystery pack's settings: every move
@@ -78,25 +78,37 @@ export const STOPS: Stop[] = [
     tab: 'missions',
     scene: 'missions',
     title: 'Live now',
-    text: 'What’s live sits in front. Roll call comes every hour: one photo or a comment within 15 min, or −5. Tap a tab behind to pull another forward.',
+    text: 'Group events everyone must take part in appear here. If more than one is on, tap the tabs to switch between them. Submit your entry before the time is up, or it’s −5.',
     lit: ['live'],
-    width: 236,
+    width: 240,
   },
   {
     tab: 'missions',
     scene: 'missions',
-    title: 'Group events and story',
-    text: 'Group events drop at any time: everyone sends a photo, then yes or no on each. Most yeses wins +5; sit it out, −5. Story chapters open as the GM tells the case.',
-    lit: ['events', 'story'],
-    core: ['events'],
-    width: 240,
+    title: 'Group events',
+    text: 'Several kinds of event can be triggered. Group events involve voting for the best answer.',
+    lit: ['events'],
+  },
+  {
+    tab: 'missions',
+    scene: 'missions',
+    title: 'Periodic missions',
+    text: 'Periodic missions are just a submission of some kind: a way for the police to keep track of you.',
+    lit: ['rollcall'],
+  },
+  {
+    tab: 'missions',
+    scene: 'missions',
+    title: 'Story missions',
+    text: 'Story missions develop the plot of the murder. How they’re scored varies from mission to mission.',
+    lit: ['story'],
   },
   {
     tab: 'missions',
     scene: 'map',
     via: [{ target: '.tr-pane--missions .bd-tab:nth-child(2)', label: 'the Map' }],
     title: 'Map',
-    text: 'The route, one bar at a time: the GM reveals each stop as you go. Now and Next up top; the faces are players sharing where they are.',
+    text: 'Here you can see how the pub crawl stands and where other players are: where the crawl is up to, and what’s next.',
     lit: ['strip', 'route'],
     core: ['route'],
   },
@@ -113,8 +125,8 @@ export const STOPS: Stop[] = [
     tab: 'missions',
     scene: 'standings',
     title: 'Trusted or watched',
-    text: 'Climb past a set score and you’re a trusted confidant: you can tip off the police about someone. Sink below one and you’re a person of interest: the police ring you.',
-    width: 236,
+    text: 'How trusted or suspicious you are changes how the police treat you. Above the trusted confidant line, you can get the police to call others. Below the person of interest line, they call you now and then to check on you. Miss a police call and there’s a penalty; answer their questions right and there’s a reward.',
+    width: 262,
     lit: ['legend'],
   },
   {
@@ -132,7 +144,7 @@ export const STOPS: Stop[] = [
     scene: 'logbook',
     via: [{ target: '.tr-bar .tabbar__tab:nth-child(2)', label: 'Log book' }],
     title: 'Log book',
-    text: 'A {heart} or an {eye} on anyone else’s entry, one pick each. Counts show once you pick. After 30 min, with 3+ picks, the majority wins: +1 to its side. Most hearts less eyes is pinned on top: +5 to its player while it stays.',
+    text: 'React with a {heart} or an {eye} on log book updates. After 30 min, with at least 3 reactions, if you reacted the same as the majority you get +1 for good detective work! The post with the most {heart} gets +5 for its author.',
     lit: ['top-card', 'entry-new'],
     core: ['entry-new'],
     width: 262,
@@ -142,9 +154,9 @@ export const STOPS: Stop[] = [
     scene: 'file',
     via: [{ target: '.tr-bar .tabbar__tab:nth-child(3)', label: 'My file' }],
     title: 'Your missions',
-    text: 'Five secret ones. Done one? Submit it and name a witness: once they confirm, +5. Then destroy the evidence (+5) or frame someone (−5 to them).',
+    text: 'Everyone also has secret tampering missions! Complete them to clear your name or frame someone else: +5 to you, or −5 to someone else. Done one? Submit it to another player for approval.',
     lit: ['mission'],
-    width: 232,
+    width: 240,
   },
   {
     tab: 'missions',
@@ -240,12 +252,12 @@ export interface Part {
 }
 
 export const PARTS: Part[] = [
-  { label: 'Missions', from: 0, to: 5 },
-  { label: 'Log book', from: 6, to: 6 },
-  { label: 'Your missions', from: 7, to: 7 },
-  { label: 'Accusing', from: 8, to: 12 },
-  { label: 'Police', from: 13, to: 16 },
+  { label: 'Missions', from: 0, to: 7 },
+  { label: 'Log book', from: 8, to: 8 },
+  { label: 'Your missions', from: 9, to: 9 },
+  { label: 'Accusing', from: 10, to: 14 },
+  { label: 'Police', from: 15, to: 18 },
 ];
 
 /** How each tag hangs: a degree or so off straight, never the same way twice running. */
-export const TILT = [-1, 1, -0.8, 1, -0.9, 0.8, -0.8, 1, -1, 1, -1, 0.8, -0.8, 1.1, -1.2, 0.9, -1];
+export const TILT = [-1, 1, -0.8, 1, -0.9, 0.8, -1, 0.9, -0.8, 1, -1, 1, -1, 0.8, -0.8, 1.1, -1.2, 0.9, -1];

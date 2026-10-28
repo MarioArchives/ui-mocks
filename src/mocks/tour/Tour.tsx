@@ -1,7 +1,7 @@
 // The torch tour (Mystery Pub Crawl): the new player's walkthrough, on the game's own screens. A player has booked in
 // and the case is still sealed: Missions shows the sealed case file with its countdown, and a kraft tag tied to its
 // twine offers the tour. Taking it fills the tabs with a specimen night (the game's demo, as Maya) and puts out the
-// lights but for a torch on one thing at a time, with a tag on twine saying what it does: thirteen stops across
+// lights but for a torch on one thing at a time, with a tag on twine saying what it does: nineteen stops across
 // Missions (its map and standings too), Log book and My file, the tabs turning as it goes. Next and Back on the tag, or
 // ← → on a keyboard; Escape or End tour leaves. Afterwards My file keeps "How tonight works": the whole tour again, or
 // one part of it.

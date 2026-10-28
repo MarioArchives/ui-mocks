@@ -1,11 +1,34 @@
 // The torch tour's nineteen stops, in order, and the five parts My file can start it at. Each stop names the tab it
 // happens on, the game screen shown there (a snapshot from snap/scenes.json, see scripts/snapshot-tour.mjs), the
 // elements the torch lights (by the data-tour names the snapshot stamped on them) and what the tag says. The words
-// follow what the snapshots show (Maya's specimen night in the game's demo) and the mystery pack's settings: every move
-// is worth 5, a verdict +1, the top entry +5, three charges a night and a 10-minute wait before charging the same
-// suspect again. The lines for a trusted confidant and a person of interest go unnumbered (the GM moves them). In the
-// tag's text {heart} and {eye} draw the log book's two marks. A stop somewhere else says how to get there (`via`): the
+// follow what the snapshots show (Maya's specimen night in the game's demo), and every number in them comes from the
+// settings the demo ran with (snap/rules.json, kept by the same script): the points, the verdicts' wait and quorum, the
+// wait before charging the same suspect again. The lines for a trusted confidant and a person of interest go unnumbered
+// (the GM moves them). In the tag's text {heart} and {eye} draw the log book's two marks. A stop somewhere else says how to get there (`via`): the
 // red pen points at what you'd tap, one hop at a time, before the tour moves on.
+
+import rulesJson from './snap/rules.json?raw';
+
+/** The game's settings the tags' numbers come from. */
+interface Rules {
+  sideQuestSkipPenalty: number;
+  verdictPoints: number;
+  verdictWindowMin: number;
+  verdictMinVotes: number;
+  topEntryPoints: number;
+  cleanPoints: number;
+  framePoints: number;
+  correctGuessReward: number;
+  exposePenalty: number;
+  wrongGuessCost: number;
+  guessCooldownMin: number;
+  policePassPoints: number;
+  policeFailPenalty: number;
+}
+
+const R = JSON.parse(rulesJson) as Rules;
+const plus = (n: number) => `+${n}`;
+const minus = (n: number) => `−${n}`;
 
 export type TabId = 'missions' | 'logbook' | 'file';
 export const TABS: TabId[] = ['missions', 'logbook', 'file'];
@@ -78,7 +101,7 @@ export const STOPS: Stop[] = [
     tab: 'missions',
     scene: 'missions',
     title: 'Live now',
-    text: 'Group events everyone must take part in appear here. If more than one is on, tap the tabs to switch between them. Submit your entry before the time is up, or it’s −5.',
+    text: `Tonight will have several events. Live events will appear here. If more than one is on, tap the tabs to switch between them. Submit your entry before the time is up, or it’s ${minus(R.sideQuestSkipPenalty)}.`,
     lit: ['live'],
     width: 240,
   },
@@ -109,8 +132,8 @@ export const STOPS: Stop[] = [
     via: [{ target: '.tr-pane--missions .bd-tab:nth-child(2)', label: 'the Map' }],
     title: 'Map',
     text: 'Here you can see how the pub crawl stands and where other players are: where the crawl is up to, and what’s next.',
-    lit: ['strip', 'route'],
-    core: ['route'],
+    lit: ['strip', 'players'],
+    core: ['strip'],
   },
   {
     tab: 'missions',
@@ -144,7 +167,7 @@ export const STOPS: Stop[] = [
     scene: 'logbook',
     via: [{ target: '.tr-bar .tabbar__tab:nth-child(2)', label: 'Log book' }],
     title: 'Log book',
-    text: 'React with a {heart} or an {eye} on log book updates. After 30 min, with at least 3 reactions, if you reacted the same as the majority you get +1 for good detective work! The post with the most {heart} gets +5 for its author.',
+    text: `React with a {heart} or an {eye} on log book updates. After ${R.verdictWindowMin} min, with at least ${R.verdictMinVotes} reactions, if you reacted the same as the majority you get ${plus(R.verdictPoints)} for good detective work! The post with the most {heart} gets ${plus(R.topEntryPoints)} for its author.`,
     lit: ['top-card', 'entry-new'],
     core: ['entry-new'],
     width: 262,
@@ -154,7 +177,7 @@ export const STOPS: Stop[] = [
     scene: 'file',
     via: [{ target: '.tr-bar .tabbar__tab:nth-child(3)', label: 'My file' }],
     title: 'Your missions',
-    text: 'Everyone also has secret tampering missions! Complete them to clear your name or frame someone else: +5 to you, or −5 to someone else. Done one? Submit it to another player for approval.',
+    text: `Everyone also has secret tampering missions! Complete them to clear your name or frame someone else: ${plus(R.cleanPoints)} to you, or ${minus(R.framePoints)} to someone else. Done one? Submit it to another player for approval.`,
     lit: ['mission'],
     width: 240,
   },
@@ -166,8 +189,8 @@ export const STOPS: Stop[] = [
       { at: { tab: 'missions', scene: 'missions' }, target: '.tr-pane--missions .bd-tab:nth-child(3)', label: 'Standings' },
       { at: { tab: 'missions', scene: 'standings' }, target: '.tr-pane--missions .st__li[data-uid="demo-alex"] .st__face', label: 'Alex’s file' },
     ],
-    title: 'Accuse someone',
-    text: 'Know what someone’s up to? Tap their face on Standings to open their file, then charge them on Form 3. Three charges a night.',
+    title: 'Press charges',
+    text: 'Is someone doing their secret tampering mission blatantly? Press charges against them: fill out Form 3.',
     lit: ['suspect-head', 'form3'],
     core: ['form3'],
   },
@@ -176,7 +199,7 @@ export const STOPS: Stop[] = [
     scene: 'search',
     via: [{ target: '.tr-pane--missions [data-tour="form3"] .cs-btn', label: 'type a charge' }],
     title: 'Name the mission',
-    text: 'Type any word from the mission you think they’re on, then tap it. All 92 are in the book.',
+    text: 'Search for the tampering mission’s name in the charge section. Then tap the one you think it is!',
     lit: ['cs-search', 'cs-hits'],
     core: ['cs-hits'],
   },
@@ -193,15 +216,15 @@ export const STOPS: Stop[] = [
     tab: 'missions',
     scene: 'upheld',
     via: [{ target: '.tr-over .cs-hold', label: 'hold to file' }],
-    title: 'If you’re right',
-    text: 'Upheld: you +5, Alex −5. Everyone sees it in the log book, and Alex is dealt a fresh mission.',
+    title: 'Sustained or dropped',
+    text: `${minus(R.exposePenalty)} to them${R.correctGuessReward > 0 ? ` and ${plus(R.correctGuessReward)} to you` : ''} if your charge is sustained, and ${minus(R.wrongGuessCost)} to you if it’s dropped.`,
     lit: ['cs-upheld', 'cs-result'],
   },
   {
     tab: 'missions',
     scene: 'wrong',
     title: 'If you’re wrong',
-    text: 'Dismissed: you −5, and nobody’s told. Then wait 10 min to charge Alex again.',
+    text: `Dropped: you ${minus(R.wrongGuessCost)}, and nobody’s told. Then wait ${R.guessCooldownMin} min to charge Alex again.`,
     lit: ['form3'],
   },
   {
@@ -226,7 +249,7 @@ export const STOPS: Stop[] = [
     scene: 'tip-note',
     via: [{ target: 'tip-alex', label: 'Alex' }],
     title: 'What they’ve been up to',
-    text: 'Say what you saw, then send. The police put it to them with a question: right, they gain 5; wrong, they lose 5.',
+    text: `Say what you saw, then send. The police put it to them with a question: right, they gain ${R.policePassPoints}; wrong, they lose ${R.policeFailPenalty}.`,
     lit: ['tip-field', 'tip-send'],
     core: ['tip-field'],
   },

@@ -4,6 +4,7 @@
 //
 //   src/mocks/tour/snap/scenes.json  each screen: the app (app bar and page), its tab bar, overlays (a sheet, a toast)
 //   src/mocks/tour/snap/game.css     the game's CSS, rewritten to live in a shadow root (html/body/:root → snap-*)
+//   src/mocks/tour/snap/rules.json   the demo's settings the tags' numbers come from (points, minutes, counts)
 //   public/tour-snap/                images, map tiles and clips the screens point at
 //
 // The elements the tour lights are stamped with data-tour="…" as they are captured (the keep(…) calls below), so the
@@ -153,6 +154,18 @@ const SPECIMEN = withBackend(`
   return 'ok';
 `);
 
+/** The settings the tags' numbers come from, as the demo runs them (the pack's own). */
+const RULE_KEYS = [
+  'scoring', 'sideQuestPoints', 'sideQuestSkipPenalty', 'verdictPoints', 'verdictWindowMin', 'verdictMinVotes', 'topEntryPoints',
+  'cleanPoints', 'framePoints', 'correctGuessReward', 'exposePenalty', 'wrongGuessCost', 'guessLimit', 'guessCooldownMin',
+  'policePassPoints', 'policeFailPenalty',
+];
+const RULES = withBackend(`
+  const s = (await S.doc('game/settings').get()).data();
+  return Object.fromEntries(${JSON.stringify(RULE_KEYS)}.map((k) => [k, s[k] ?? null]));
+`);
+let rules = null;
+
 /** Tidies the log book once the timer has run: the standing changes the verdicts set off and the roll call's own post
  * would sit on top of the stop and push the entries down. */
 const TIDY = withBackend(`
@@ -198,21 +211,21 @@ const SEALED = withBackend(`
  * (the mock pins them to its own frame), a carousel remembers which card sat in its middle, a scrolling sheet is
  * marked as a scroller, live countdowns are marked to keep ticking, and every URL becomes a token for the script to
  * fetch. Leaflet's markers sit on transforms, which the tour's measuring ignores, so a map gets a plain box round its
- * markers instead (`box`).
+ * markers instead (`boxes`: a name for each, and the markers it goes round).
  */
 const CAPTURE = (opts) => `(async (opts) => {
   const missing = [];
   const stamped = [];
   const mark = (el, name) => { el.setAttribute('data-tour', name); stamped.push(el); };
   const added = [];
-  if (opts.box) {
+  for (const [boxName, sel] of opts.boxes ?? []) {
     const map = document.querySelector('.leaflet-container');
     const m = map.getBoundingClientRect();
-    const rs = [...map.querySelectorAll(opts.box)].map((e) => e.getBoundingClientRect()).filter((r) => r.bottom > m.top && r.top < m.bottom && r.right > m.left && r.left < m.right);
+    const rs = [...map.querySelectorAll(sel)].map((e) => e.getBoundingClientRect()).filter((r) => r.bottom > m.top && r.top < m.bottom && r.right > m.left && r.left < m.right);
     const x0 = Math.min(...rs.map((r) => r.left)) - m.left, x1 = Math.max(...rs.map((r) => r.right)) - m.left;
     const y0 = Math.min(...rs.map((r) => r.top)) - m.top, y1 = Math.max(...rs.map((r) => r.bottom)) - m.top;
     const box = document.createElement('div');
-    box.setAttribute('data-tour', opts.boxName);
+    box.setAttribute('data-tour', boxName);
     box.className = 'snap-box';
     box.style.cssText = 'left: calc(' + Math.round(x0) + 'px + var(--snap-dx, 0px)); top: calc(' + Math.round(y0) + 'px + var(--snap-dy, 0px)); width: ' + Math.round(x1 - x0) + 'px; height: ' + Math.round(y1 - y0) + 'px';
     map.appendChild(box);
@@ -270,7 +283,8 @@ const CAPTURE = (opts) => `(async (opts) => {
     }
   }
   const clean = (root) => {
-    root.querySelectorAll('script, noscript, .skip-link').forEach((e) => e.remove());
+    // The game's own torch tour (its offer and My file's card) is left out: the mock draws its own.
+    root.querySelectorAll('script, noscript, .skip-link, .tr-offer, .tr-offer-pin, .tr-tourcard-wrap').forEach((e) => e.remove());
     for (const el of [root, ...root.querySelectorAll('*')]) {
       for (const k of ['src', 'poster', 'href', 'xlink:href']) {
         const v = el.getAttribute(k);
@@ -313,6 +327,8 @@ const STYLES = `[...document.querySelectorAll('style')].map((s, i) => ({ id: s.g
 
 const scenes = {};
 const styles = new Map();
+/** The game's own torch tour's stylesheets, left out with its offer and card. */
+const GAME_TOUR = /\/src\/packs\/mystery\/tour\//;
 const urls = new Set();
 
 async function keep(b, id, opts) {
@@ -322,7 +338,7 @@ async function keep(b, id, opts) {
   if (s.missing.length) log(`${id}: nothing for ${s.missing.join(', ')}`);
   s.urls.forEach((u) => urls.add(u));
   scenes[id] = s;
-  for (const st of await b.ev(STYLES)) if (!styles.has(st.id)) styles.set(st.id, st.text);
+  for (const st of await b.ev(STYLES)) if (!styles.has(st.id) && !GAME_TOUR.test(st.id)) styles.set(st.id, st.text);
   if (process.argv.includes('--keep-shots')) await b.shot(join(arg('--scratch', tmpdir()), `tour-snap-${id}.png`));
   log(`kept ${id} (${Math.round(s.app.length / 1024)} KB${s.overlays.length ? `, ${s.overlays.length} over it` : ''})`);
 }
@@ -359,18 +375,35 @@ const route = async (b, hash, wait = 2000) => {
   await sleep(wait);
 };
 
-/** Opens Form 3 on Alex's file and searches for "drink". */
-async function chargeSearch(b) {
+/** Alex's hand, by title: the charge that's upheld is one of these, the dismissed one isn't. */
+const ALEX = withBackend(`
+  return (await all('players/demo-alex/quests')).map((q) => q.data()).filter((q) => q.status !== 'replaced').map((q) => q.title);
+`);
+
+/** A word to search for that finds `title`: its longest word. */
+const wordOf = (title) => ([...title.matchAll(/[A-Za-z]{4,}/g)].map((m) => m[0]).sort((a, b) => b.length - a.length)[0] ?? title).toLowerCase();
+
+/** Opens Form 3 on Alex's file and searches for `word`. */
+async function chargeSearch(b, word) {
   await route(b, '#/player/demo-alex', 2500);
   await b.click('button', 'Type a charge');
   await sleep(1200);
   await b.ev(`document.querySelector('.cs-sheet input')?.focus()`);
-  await b.type('drink');
+  await b.type(word);
   await sleep(1200);
 }
 
-async function pickCharge(b, title) {
-  await b.ev(`[...document.querySelectorAll('.cs-hit')].find((e) => e.querySelector('b')?.textContent.trim() === ${JSON.stringify(title)})?.click()`);
+/** Picks the charge called `title`, or (given a hand instead) the first one found that isn't in it. */
+async function pickCharge(b, { title, notIn }) {
+  const picked = await b.ev(`(() => {
+    const hits = [...document.querySelectorAll('.cs-hit')];
+    const name = (e) => e.querySelector('b')?.textContent.trim();
+    const hit = ${JSON.stringify(title ?? null)} ? hits.find((e) => name(e) === ${JSON.stringify(title ?? '')}) : hits.find((e) => !${JSON.stringify(notIn ?? [])}.includes(name(e)));
+    hit?.click();
+    return hit ? name(hit) : null;
+  })()`);
+  if (!picked) throw new Error(`No charge to pick (${title ?? "one not in Alex's hand"})`);
+  log(`charged Alex with "${picked}"`);
   await sleep(1200);
 }
 
@@ -386,6 +419,9 @@ async function specimenNight() {
   const b = await launch();
   try {
     await signIn(b, SPECIMEN);
+    rules = await b.ev(RULES);
+    const unset = RULE_KEYS.filter((k) => rules?.[k] == null);
+    if (unset.length) throw new Error(`The demo's settings have no ${unset.join(', ')}`);
     await letTheNightRun(b);
 
     await route(b, '#/');
@@ -409,8 +445,10 @@ async function specimenNight() {
     await sleep(3000);
     await keep(b, 'map', {
       tags: [['strip', '.fqstrip']],
-      box: '.fqpin--stop, .fqpin--player, .fqfoot, .fqpin__label, .fqlabel',
-      boxName: 'route',
+      boxes: [
+        ['route', '.fqpin--stop, .fqpin--player, .fqfoot, .fqpin__label, .fqlabel'],
+        ['players', '.fqpin--player, .fqpin--player .fqpin__label'],
+      ],
     });
 
     await route(b, '#/');
@@ -423,8 +461,8 @@ async function specimenNight() {
     await keep(b, 'logbook', {
       tags: [
         ['top-card', '.lb-top'],
-        ['entry-new', '.tl__chapter:not(.tl__shut) .cf-strung > li', 'Autograph'],
-        ['entry-verdict', '.tl__chapter:not(.tl__shut) .cf-strung > li', 'Not my birthday'],
+        // The open stop's newest entry: the fresh one nobody has stamped yet.
+        ['entry-new', '.tl__chapter:not(.tl__shut) .cf-strung > li'],
       ],
     });
 
@@ -443,9 +481,10 @@ async function specimenNight() {
     await route(b, '#/player/demo-alex', 2500);
     await keep(b, 'alex', { tags: [['suspect-head', '.mf-suspect'], ['form3', 'ul.pf-accuse', 'Form 3']] });
 
-    await chargeSearch(b);
+    const hand = await b.ev(ALEX);
+    await chargeSearch(b, wordOf(hand[0]));
     await keep(b, 'search', { tags: [['cs-search', '.cs-sheet--search .cs-form'], ['cs-hits', '.cs-hits']] });
-    await pickCharge(b, 'Cheers!');
+    await pickCharge(b, { title: hand[0] });
     await keep(b, 'terms', { tags: [['cs-terms', '.cs-terms'], ['cs-sign', '.cs-sign'], ['cs-file', '.cs-hold']] });
     await fileCharge(b);
     await keep(b, 'upheld', { tags: [['cs-upheld', '.cs-stampwrap'], ['cs-result', '.cs-result'], ['cs-post', '.cs-post']] });
@@ -462,8 +501,9 @@ async function wrongChargeAndTip() {
   try {
     await signIn(b, SPECIMEN);
     await letTheNightRun(b);
-    await chargeSearch(b);
-    await pickCharge(b, 'Hold this');
+    const hand = await b.ev(ALEX);
+    await chargeSearch(b, 'drink');
+    await pickCharge(b, { notIn: hand });
     await fileCharge(b);
     await sleep(400);
     await keep(b, 'wrong', { tags: [['toast', '.toast'], ['form3', 'ul.pf-accuse', 'Form 3']] });
@@ -637,5 +677,6 @@ for (const s of Object.values(scenes)) {
 }
 writeFileSync(join(SNAP, 'game.css'), css);
 writeFileSync(join(SNAP, 'scenes.json'), JSON.stringify({ taken: new Date().toISOString(), width: WIDTH, scenes }, null, 0));
+writeFileSync(join(SNAP, 'rules.json'), `${JSON.stringify(rules, null, 2)}\n`);
 log(`fonts the game declares: ${[...fonts].join(', ')}`);
 log(`wrote ${Object.keys(scenes).length} screens, ${Math.round(css.length / 1024)} KB of CSS and ${urls.size} files`);

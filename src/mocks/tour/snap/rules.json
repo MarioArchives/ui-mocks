@@ -1,0 +1,18 @@
+{
+  "scoring": "classic",
+  "sideQuestPoints": 5,
+  "sideQuestSkipPenalty": 5,
+  "verdictPoints": 1,
+  "verdictWindowMin": 30,
+  "verdictMinVotes": 3,
+  "topEntryPoints": 5,
+  "cleanPoints": 5,
+  "framePoints": 5,
+  "correctGuessReward": 5,
+  "exposePenalty": 5,
+  "wrongGuessCost": 5,
+  "guessLimit": 3,
+  "guessCooldownMin": 10,
+  "policePassPoints": 5,
+  "policeFailPenalty": 5
+}

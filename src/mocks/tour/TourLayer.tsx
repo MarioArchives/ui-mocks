@@ -5,7 +5,7 @@
 // thing you'd tap (a hop), the red pen (Marks.tsx) drawing an arrow to it unless the hop says not to.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { HangTag, Tack } from './HangTag';
-import { place, selectorOf, type Box, type Limits, type Placement } from './layout';
+import { place, scrollEnd, selectorOf, whenStill, type Box, type Limits, type Placement } from './layout';
 import { Arrow, boxIn, contains, union, within } from './Marks';
 import { ArrowIcon, CheckIcon, TagText } from './screens';
 import { STOPS, TILT } from './stops';
@@ -202,11 +202,9 @@ export function TourLayer({
     });
   }, [at, stop, reduced]);
 
-  /** Waits, unless motion is reduced (then everything is where it ends up at once). */
-  const settled = (ms: number) => (reduced ? 0 : ms);
-
   // A hop: the page brought round to it if it's scrolled away, then the arrow from what was lit to the thing to tap,
-  // the torch going with it unless that thing is inside what's lit already.
+  // the torch going with it unless that thing is inside what's lit already. Nothing is measured while the page is
+  // still moving (the stop's own scroll, or the one bringing the thing round), so the torch lands where it stays.
   const [hopAt, setHopAt] = useState<HopAt | null>(null);
   /** Where the torch is on a hop elsewhere; it stays there between one hop and the next, until the stop. */
   const [hopSpot, setHopSpot] = useState<Box | null>(null);
@@ -223,19 +221,19 @@ export function TourLayer({
     if (!hop || phase !== 'on' || !el) return;
     const timers: number[] = [];
     const later = (fn: () => void, ms: number) => timers.push(window.setTimeout(fn, ms));
+    const frames: (() => void)[] = [];
+    /** `then` once the scroller is at rest (at `to`, given one); at once with reduced motion, where scrolls jump. */
+    const still = (scroller: HTMLElement | null, then: () => void, to: number | null = null) => {
+      if (!scroller || reduced) then();
+      else frames.push(whenStill(scroller, then, to));
+    };
     later(() => {
       const target = el.querySelector<HTMLElement>(selectorOf(hop.target));
       if (!target) return shownRef.current();
-      const lim = limits(el, top.current);
       const scroller = target.closest<HTMLElement>('[data-scroller]');
-      const r = boxIn(target, el);
-      let wait = 0;
-      if (scroller && (r.y < lim.top + 10 || r.y + r.h > lim.bottom - 10)) {
-        const by = r.y < lim.top + 10 ? r.y - lim.top - 24 : r.y + r.h - lim.bottom + 24;
-        scroller.scrollBy({ top: by, behavior: reduced ? 'auto' : 'smooth' });
-        wait = settled(420);
-      }
-      later(() => {
+      /** The arrow to the thing to tap, and the torch going to it, measured where it rests. */
+      const show = () => {
+        const lim = limits(el, top.current);
         const to = boxIn(target, el);
         const spot = atRef.current?.spot;
         const inner = !hop.elsewhere && !!spot && contains(spot, { x: to.x + to.w / 2, y: to.y + to.h / 2 });
@@ -251,9 +249,22 @@ export function TourLayer({
         if (!inner) setHopSpot(padded(to, el.clientWidth));
         // The arrow and its head take this long to draw (or, without one, the torch to get there); a moment, then on.
         later(() => shownRef.current(), reduced ? 650 : !hop.arrow ? 900 : inner ? 1050 : 1250);
-      }, wait);
+      };
+      // Once the page is still, the thing is brought round if it's scrolled away, and shown when that scroll is done.
+      still(scroller, () => {
+        const lim = limits(el, top.current);
+        const r = boxIn(target, el);
+        if (!scroller || (r.y >= lim.top + 10 && r.y + r.h <= lim.bottom - 10)) return show();
+        const by = r.y < lim.top + 10 ? r.y - lim.top - 24 : r.y + r.h - lim.bottom + 24;
+        const end = scrollEnd(scroller, by);
+        scroller.scrollBy({ top: by, behavior: reduced ? 'auto' : 'smooth' });
+        still(scroller, show, end);
+      });
     }, hop.settle);
-    return () => timers.forEach((id) => window.clearTimeout(id));
+    return () => {
+      timers.forEach((id) => window.clearTimeout(id));
+      frames.forEach((stop) => stop());
+    };
   }, [hop, phase, root, reduced]);
 
   const shown = phase === 'on' && at;

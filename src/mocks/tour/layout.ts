@@ -51,6 +51,33 @@ const ABOVE = 44;
 /** The lowest the spot's top may be for a turned-over tag to fit above it, under the strip. */
 const roomAbove = (tag: { h: number }, lim: Limits) => lim.top + 4 + tag.h + ABOVE - PAD;
 
+/**
+ * Calls `then` once `scroller` has come to rest: at `to` when a scroll there was just asked for, else (a scroll that may
+ * still be under way, a fling) unmoved for a few frames running; never later than `max` ms. A smooth scroll takes as
+ * long as the phone likes, so whatever is measured after it is measured where it stays. Returns a cancel.
+ */
+export function whenStill(scroller: HTMLElement, then: () => void, to: number | null = null, max = 1500): () => void {
+  const start = performance.now();
+  let last = scroller.scrollTop;
+  let still = 0;
+  let id = 0;
+  const tick = (now: number) => {
+    const y = scroller.scrollTop;
+    still = Math.abs(y - last) < 0.5 ? still + 1 : 0;
+    last = y;
+    // Asked to go somewhere, it's there; or it never set off (nowhere further to go), or stopped short.
+    const rest = to === null ? still >= 3 : (Math.abs(y - to) < 1 && still >= 1) || still >= 10;
+    if (rest || now - start > max) return then();
+    id = requestAnimationFrame(tick);
+  };
+  id = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(id);
+}
+
+/** Where a scroll by `by` ends: as far as the scroller goes. */
+export const scrollEnd = (scroller: HTMLElement, by: number) =>
+  Math.max(0, Math.min(scroller.scrollHeight - scroller.clientHeight, scroller.scrollTop + by));
+
 /** A lit name as a selector: a data-tour name the snapshot stamped, or a selector as it is. */
 export const selectorOf = (name: string) => (/^[.#[]/.test(name) ? name : `[data-tour="${name}"]`);
 
